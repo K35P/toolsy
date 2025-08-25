@@ -1,14 +1,12 @@
 import './App.css'
-import toolsyLogo from "./assets/toolsy-logo.svg"
+import SidePanel from './components/SidePanel/SidePanel'
 
 function App() {
   return (
     <div className='App'>
-      <nav className='navbar'></nav>
+      <nav className='topbar'></nav>
       <div className='main-content'>
-        <aside className='side-panel'>
-          <img src={toolsyLogo} alt="Toolsy Logo" style={{width: '100px'}} />
-        </aside>
+        <SidePanel />
         <div className='content'>Contenuto principale</div>
       </div>
     </div>

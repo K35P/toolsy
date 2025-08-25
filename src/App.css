@@ -6,13 +6,19 @@ html, body, #root, .App {
   overflow: hidden;
 }
 
+html, body, #root {
+  background-color: transparent !important;
+}
+
 .App {
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
   /* Gradiente unificato su tutto l'app */
-  background: linear-gradient(135deg, #0B0A2F 0%, #042517 100%);
+  background: linear-gradient(135deg, #0b0a2f67 0%, #04251778 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   position: relative;
 }
 
@@ -20,7 +26,7 @@ html, body, #root, .App {
 .App::after {
   content: '';
   position: absolute;
-  left: 240px;
+  left: 232px;
   top: 0;
   bottom: 0;
   width: 1px;
@@ -28,7 +34,7 @@ html, body, #root, .App {
   z-index: 10;
 }
 
-.navbar {
+.topbar {
   height: 40px;
   display: flex;
   align-items: center;
@@ -44,11 +50,11 @@ html, body, #root, .App {
   user-select: none;
 }
 
-.navbar button,
-.navbar input,
-.navbar select,
-.navbar a,
-.navbar .clickable {
+.topbar button,
+.topbar input,
+.topbar select,
+.topbar a,
+.topbar .clickable {
   -webkit-app-region: no-drag;
   cursor: pointer;
 }
@@ -61,7 +67,7 @@ html, body, #root, .App {
 }
 
 .side-panel {
-  width: 240px;
+  width: 200px;
   background-color: transparent; /* Trasparente per mostrare il gradiente */
   padding: 16px;
   overflow-y: auto;
