@@ -1,0 +1,137 @@
+html, body, #root, .App {
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  overflow: hidden;
+}
+
+html, body, #root {
+  background-color: transparent !important;
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  /* Unified gradient throughout the app */
+  background: linear-gradient(135deg, #0b0a2f96 0%, #04251796 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+}
+
+/* Vertical line running across the entire app from top to bottom */
+.App::after {
+  content: '';
+  position: absolute;
+  left: 232px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  z-index: 10;
+}
+
+.topbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: transparent; /* Transparent to show the gradient */
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-weight: 500;
+  
+  /* Properties for drag */
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.topbar button,
+.topbar input,
+.topbar select,
+.topbar a,
+.topbar .clickable {
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+}
+
+/* SIDE PANEL */
+.side-panel {
+  width: 200px;
+  background-color: transparent; /* Transparent to show the gradient */
+  padding: 16px;
+  overflow-y: auto;
+  flex-shrink: 0;
+  color: white;
+  transition: all 0.3s ease-in-out;
+}
+.toolsy-logo{
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: auto;
+}
+.collapse-icon{
+    position: absolute;
+    top: 64px;
+    left: 190px;
+    width: 20px;
+    padding: 3px 6px;
+    border-radius: var(--global-border-radius);
+    cursor: pointer;
+    text-align: center;
+}
+.collapse-icon:hover{
+    background-color: var(--global-hover-bg);
+}
+.menu-li {
+    display: flex;
+    justify-content: start;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 12px;
+    margin-bottom: 1rem;
+    border-radius: var(--global-border-radius);
+    text-align: start;
+    cursor: pointer;
+    transition: 0.1s all ease-in;
+}
+.menu-li:hover{
+    background-color: var(--global-hover-bg);
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 40px);
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  background-color: transparent; /* Transparent to show the gradient */
+  padding: 24px;
+  overflow-y: auto;
+  color: white;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}

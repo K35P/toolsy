@@ -35,7 +35,7 @@ const indexHtml = path.join(RENDERER_DIST, 'index.html')
 
 async function createWindow() {
   win = new BrowserWindow({
-    title: 'Main window',
+    title: 'Toolsy',
     icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
     frame: false, // Finestra senza frame
     titleBarStyle: 'hiddenInset', // Nasconde la title bar ma mantiene i controlli

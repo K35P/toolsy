@@ -16,6 +16,10 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+  /* GLOBAL VARIABLES */
+  --global-hover-bg: #00000050;
+  --global-border-radius: 12px;
 }
 
 a {

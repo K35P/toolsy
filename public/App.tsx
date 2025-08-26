@@ -1,4 +1,4 @@
-import './css/App.css'
+import './App.css'
 import SidePanel from './components/SidePanel/SidePanel'
 
 function App() {

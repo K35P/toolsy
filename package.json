@@ -1,9 +1,9 @@
 {
-  "name": "electron-vite-react",
-  "version": "2.2.0",
+  "name": "Toolsy",
+  "version": "1.0.0",
   "main": "dist-electron/main/index.js",
-  "description": "Electron Vite React boilerplate.",
-  "author": "草鞋没号 <308487730@qq.com>",
+  "description": "Toolsy: a minimal, modular utility app for productivity and system tools.",
+  "author": "K35P",
   "license": "MIT",
   "private": true,
   "debug": {
@@ -20,6 +20,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "electron-updater": "^6.3.9"
   },
   "devDependencies": {
