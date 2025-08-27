@@ -68,9 +68,9 @@ html, body, #root {
 }
 .collapse-icon{
   position: relative;
-  left: var(--side-panel-width);
+  left: calc(var(--side-panel-width) - 10px);
   width: 10px;
-  padding: 3px;
+  padding: 4px;
   border-radius: var(--global-border-radius);
   cursor: pointer;
   transition: all 0.3s ease-in-out;
@@ -90,7 +90,10 @@ html, body, #root {
   transition: 0.1s all ease-in;
 }
 .menu-li:hover{
-    background-color: var(--global-hover-bg);
+  background-color: var(--global-hover-bg);
+}
+.menu-li.active {
+  background-color: var(--global-hover-bg);
 }
 .menu-li span {
   transition: all 0.3s ease-in-out;

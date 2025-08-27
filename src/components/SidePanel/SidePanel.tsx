@@ -3,6 +3,7 @@ import toolsyLogo from "../../assets/toolsy-logo.svg";
 import toolsyLogoClosed from "../../assets/toolsy-logo-2.svg";
 import { DocumentIcon, HomeIcon, Cog8ToothIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline"
 import { useGlobalContext } from "@/context/GlobalContext";
+import { NavLink } from "react-router";
 
 const SidePanel: React.FC = () => {
   const { isSidePanelClosed, handleToggleSidePanel } = useGlobalContext();
@@ -43,19 +44,34 @@ const SidePanel: React.FC = () => {
 
         <div className="mt-6">
           <ul className="list-none p-0 w-full">
-            <li className="menu-li">
-              <HomeIcon className="size-5 shrink-0" />
-              <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${isSidePanelClosed ? "opacity-0 w-0" : "opacity-100 w-auto ml-2"}`}>Home</span>
+            <li>
+              <NavLink 
+                to="/" 
+                className="menu-li flex items-center no-underline text-inherit hover:no-underline hover:text-inherit"
+              >
+                <HomeIcon className="size-5 shrink-0" />
+                <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${isSidePanelClosed ? "opacity-0 w-0" : "opacity-100 w-auto ml-2"}`}>Home</span>
+              </NavLink>
             </li>
 
-            <li className="menu-li">
-              <DocumentIcon className="size-5 shrink-0" />
-              <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${isSidePanelClosed ? "opacity-0 w-0" : "opacity-100 w-auto ml-2"}`}>My Files</span>
+            <li>
+              <NavLink 
+                to="/files" 
+                className="menu-li flex items-center no-underline text-inherit hover:no-underline hover:text-inherit"
+              >
+                <DocumentIcon className="size-5 shrink-0" />
+                <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${isSidePanelClosed ? "opacity-0 w-0" : "opacity-100 w-auto ml-2"}`}>My Files</span>
+              </NavLink>
             </li>
 
-            <li className="menu-li">
-              <Cog8ToothIcon className="size-5 shrink-0" />
-              <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${isSidePanelClosed ? "opacity-0 w-0" : "opacity-100 w-auto ml-2"}`}>Settings</span>
+            <li>
+              <NavLink 
+                to="/settings" 
+                className="menu-li flex items-center no-underline text-inherit hover:no-underline hover:text-inherit"
+              >
+                <Cog8ToothIcon className="size-5 shrink-0" />
+                <span className={`transition-all duration-300 whitespace-nowrap overflow-hidden ${isSidePanelClosed ? "opacity-0 w-0" : "opacity-100 w-auto ml-2"}`}>Settings</span>
+              </NavLink>
             </li>
           </ul>
         </div>
