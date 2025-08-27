@@ -2,7 +2,7 @@
   "name": "Toolsy",
   "version": "1.0.0",
   "main": "dist-electron/main/index.js",
-  "description": "Toolsy: a minimal, modular utility app for productivity and system tools.",
+  "description": "Toolsy - Self-hosted software for fast and private file & image conversions.",
   "author": "K35P",
   "license": "MIT",
   "private": true,
