@@ -1,22 +1,31 @@
 import React, { createContext, useContext, useState } from 'react';
 
-// Creazione del contesto
-const GlobalContext = createContext();
+const GlobalContext = createContext(); // Provider
 
-// Provider
 export const GlobalProvider = ({ children }) => {
   const [theme, setTheme] = useState('light');
   const [isSidePanelClosed, setIsSidePanelClosed] = useState(false);
 
-  const toggleTheme = () => {
+  const handleToggleTheme = () => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  const handleToggleSidePanel = () => {
+    setIsSidePanelClosed(prev => {
+      const newValue = !prev;
+      document.documentElement.style.setProperty(
+        '--side-panel-width',
+        newValue ? '50px' : '200px'
+      );
+      return newValue;
+    });
   };
 
   const values = {
     theme,
-    toggleTheme,
+    handleToggleTheme,
     isSidePanelClosed,
-    setIsSidePanelClosed,
+    handleToggleSidePanel,
   };
 
   return (

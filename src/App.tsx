@@ -7,7 +7,7 @@ function App() {
       <nav className='topbar'></nav>
       <div className='main-content'>
         <SidePanel />
-        <div className='content'>Contenuto principale</div>
+        <div className='content'>Main Content</div>
       </div>
     </div>
   )
