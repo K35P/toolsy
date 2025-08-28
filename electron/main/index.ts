@@ -1,9 +1,11 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import os from 'node:os'
 import { update } from './update'
+import fs from "fs"
+import { convertImage } from '../../utils/imageConverter'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -126,3 +128,48 @@ ipcMain.on('window:maximize', () => {
 ipcMain.on('window:close', () => {
   win?.close()
 })
+
+// Conversions modules
+ipcMain.handle("ensure-conversions-dir", async () => {
+  try {
+    // pick the current user's desktop
+    const desktopDir = app.getPath("desktop");
+    const dir = path.join(desktopDir, "Toolsy Conversions");
+
+    // create the folder if not exist
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    return dir;
+  } catch (err) {
+    console.error("Errore creando la cartella Toolsy Conversions:", err);
+    throw err;
+  }
+});
+
+ipcMain.handle("convert-image", async (_, inputPath: string, format: string, quality?: number) => {
+  if (!inputPath) throw new Error("Percorso file non valido");
+
+  const desktopDir = app.getPath("desktop");
+  const outputDir = path.join(desktopDir, "Toolsy Conversions");
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+  return await convertImage(inputPath, outputDir, { format: format as any, quality });
+});
+
+ipcMain.handle("select-image", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: [
+      { name: "Images", extensions: ["jpg", "jpeg", "png", "webp", "avif", "tiff", "svg"] },
+    ],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0]; // percorso assoluto
+});
+
+ipcMain.handle("open-path", async (_, filePath: string) => {
+  const folder = path.dirname(filePath);
+  return shell.openPath(folder);
+});

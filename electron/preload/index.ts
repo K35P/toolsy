@@ -1,6 +1,18 @@
-import { ipcRenderer, contextBridge } from 'electron'
+import { ipcRenderer, contextBridge, shell } from 'electron'
 
-// --------- Expose some API to the Windows Buttons ---------
+// --------- Expose some API for the conversion modules ---------
+contextBridge.exposeInMainWorld("electronAPI", {
+  convertImage: (filePath: string, format: string, quality?: number) => ipcRenderer.invoke("convert-image", filePath, format, quality),
+  ensureConversionsDir: () => ipcRenderer.invoke("ensure-conversions-dir"),
+  selectImage: () => ipcRenderer.invoke("select-image"),
+  openPath: (filePath: string) => ipcRenderer.invoke("open-path", filePath),
+  handleDroppedFile: (filePath: string) => {
+    const event = new CustomEvent("file-dropped", { detail: filePath });
+    window.dispatchEvent(event);
+  },
+});
+
+// --------- Expose some API for the Windows Buttons ---------
 contextBridge.exposeInMainWorld('api', {
   platform: process.platform, // "win32" on Windows
   minimize: () => ipcRenderer.send('window:minimize'),
