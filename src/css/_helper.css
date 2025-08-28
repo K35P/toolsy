@@ -1,0 +1,8 @@
+/* CSS Helper classes */
+
+.no-drag {
+  -webkit-app-region: no-drag !important;
+}
+.global-hover-bg:hover{
+    background-color: var(--global-hover-bg);
+}

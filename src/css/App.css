@@ -24,6 +24,9 @@ html, body, #root {
   -webkit-backdrop-filter: blur(20px);
   position: relative;
 }
+.windows .App {
+  background: linear-gradient(135deg, #0b0a2fcc 0%, #042517cc 100%);
+}
 .topbar {
   height: 35px;
   display: flex;

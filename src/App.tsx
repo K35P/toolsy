@@ -1,11 +1,13 @@
 import './css/App.css'
 import SidePanel from './components/SidePanel/SidePanel'
 import { Route, Routes } from 'react-router'
+import TopBar from './components/TopBar'
 
 function App() {
   return (
     <div className='App'>
-      <nav className='topbar'></nav>
+      <TopBar />
+
       <div className='main-content'>
         <SidePanel />
 

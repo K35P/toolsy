@@ -1,5 +1,13 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
+// --------- Expose some API to the Windows Buttons ---------
+contextBridge.exposeInMainWorld('api', {
+  platform: process.platform, // "win32" on Windows
+  minimize: () => ipcRenderer.send('window:minimize'),
+  maximize: () => ipcRenderer.send('window:maximize'),
+  close: () => ipcRenderer.send('window:close'),
+})
+
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
   on(...args: Parameters<typeof ipcRenderer.on>) {

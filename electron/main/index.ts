@@ -32,21 +32,22 @@ if (!app.requestSingleInstanceLock()) {
 let win: BrowserWindow | null = null
 const preload = path.join(__dirname, '../preload/index.mjs')
 const indexHtml = path.join(RENDERER_DIST, 'index.html')
+const isWindows = process.platform === 'win32'
 
 async function createWindow() {
   win = new BrowserWindow({
     title: 'Toolsy',
     icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
-    frame: false, // Finestra senza frame
-    titleBarStyle: 'hiddenInset', // Nasconde la title bar ma mantiene i controlli
-    transparent: true, // Finestra trasparente
-    backgroundColor: '#00000000', // Sfondo trasparente
-    vibrancy: 'under-window', // Effetto blur su macOS (opzionale)
+    frame: false, // Window without frame
+    titleBarStyle: 'hiddenInset', // Hide the title bar but keeps the controls
+    transparent: !isWindows,
+    backgroundColor: isWindows ? '#1c1c1cCC' : '#00000000',
+    vibrancy: isWindows ? undefined : 'under-window',
     webPreferences: {
       preload,
       contextIsolation: true,
-      nodeIntegration: false, // Importante per la sicurezza
-      backgroundThrottling: false, // Previene il throttling con finestre trasparenti
+      nodeIntegration: false, // Important for security
+      backgroundThrottling: false, // Prevents the throttling with transparent windows
     },
   })
 
@@ -109,4 +110,19 @@ ipcMain.handle('open-win', (_, arg) => {
   } else {
     childWindow.loadFile(indexHtml, { hash: arg })
   }
+})
+
+// For windows buttons
+ipcMain.on('window:minimize', () => {
+  win?.minimize()
+})
+ipcMain.on('window:maximize', () => {
+  if (win?.isMaximized()) {
+    win.unmaximize()
+  } else {
+    win?.maximize()
+  }
+})
+ipcMain.on('window:close', () => {
+  win?.close()
 })
