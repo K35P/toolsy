@@ -6,6 +6,7 @@ import os from 'node:os'
 import { update } from './update'
 import fs from "fs"
 import { convertImage } from '../../utils/imageConverter'
+import { settingsManager } from '../utils/settingsManager'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -149,8 +150,9 @@ ipcMain.handle("select-image", async () => {
 ipcMain.handle("convert-image", async (_, inputPath: string, format: string, quality?: number) => {
   if (!inputPath) throw new Error("Percorso file non valido");
 
-  const desktopDir = app.getPath("desktop");
-  const outputDir = path.join(desktopDir, "Toolsy Conversions");
+  // Usa il percorso personalizzato dalle impostazioni
+  const outputDir = settingsManager.getEffectiveOutputPath();
+  
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
   return await convertImage(inputPath, outputDir, { format: format as any, quality });
@@ -158,9 +160,8 @@ ipcMain.handle("convert-image", async (_, inputPath: string, format: string, qua
 
 ipcMain.handle("ensure-conversions-dir", async () => {
   try {
-    // pick the current user's desktop
-    const desktopDir = app.getPath("desktop");
-    const dir = path.join(desktopDir, "Toolsy Conversions");
+    // Use the custom path from settings
+    const dir = settingsManager.getEffectiveOutputPath();
 
     // create the folder if not exist
     if (!fs.existsSync(dir)) {
@@ -199,8 +200,7 @@ ipcMain.handle("delete-converted-file", async (_, filePath: string) => {
 
 ipcMain.handle("get-converted-files", async () => {
   try {
-    const desktopDir = app.getPath("desktop");
-    const conversionsDir = path.join(desktopDir, "Toolsy Conversions");
+    const conversionsDir = settingsManager.getEffectiveOutputPath();
     
     if (!fs.existsSync(conversionsDir)) {
       return [];
@@ -229,8 +229,7 @@ ipcMain.handle("get-converted-files", async () => {
 
 ipcMain.handle("open-conversions-folder", async () => {
   try {
-    const desktopDir = app.getPath("desktop");
-    const conversionsDir = path.join(desktopDir, "Toolsy Conversions");
+    const conversionsDir = settingsManager.getEffectiveOutputPath();
     
     // Ensure that folder exist
     if (!fs.existsSync(conversionsDir)) {
@@ -241,6 +240,92 @@ ipcMain.handle("open-conversions-folder", async () => {
     return shell.openPath(conversionsDir);
   } catch (err) {
     console.error("Errore nell'aprire la cartella Toolsy Conversions:", err);
+    throw err;
+  }
+});
+
+// Settings - Output folder selection
+ipcMain.handle("select-output-folder", async () => {
+  try {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory'],
+      title: 'Seleziona cartella di output per le conversioni',
+      buttonLabel: 'Seleziona cartella'
+    });
+    return result;
+  } catch (err) {
+    console.error("Errore nella selezione della cartella:", err);
+    throw err;
+  }
+});
+
+// Settings - Get custom output path
+ipcMain.handle("get-custom-output-path", async () => {
+  try {
+    return settingsManager.getOutputPath();
+  } catch (err) {
+    console.error("Errore nel leggere il percorso personalizzato:", err);
+    throw err;
+  }
+});
+
+// Settings - Set custom output path
+ipcMain.handle("set-custom-output-path", async (_, customPath: string) => {
+  try {
+    if (customPath && customPath.trim() !== '') {
+      if (!fs.existsSync(customPath)) {
+        fs.mkdirSync(customPath, { recursive: true });
+      }
+      settingsManager.updateOutputPath(customPath);
+    } else {
+      // If the path is empty, restore the default path
+      settingsManager.updateOutputPath('');
+    }
+    return true;
+  } catch (err) {
+    console.error("Errore nell'impostare il percorso personalizzato:", err);
+    throw err;
+  }
+});
+
+// Settings - Get all settings
+ipcMain.handle("get-settings", async () => {
+  try {
+    return settingsManager.getSettings();
+  } catch (err) {
+    console.error("Errore nel leggere le impostazioni:", err);
+    throw err;
+  }
+});
+
+// Settings - Update settings
+ipcMain.handle("update-settings", async (_, newSettings: any) => {
+  try {
+    settingsManager.updateSettings(newSettings);
+    return true;
+  } catch (err) {
+    console.error("Errore nell'aggiornare le impostazioni:", err);
+    throw err;
+  }
+});
+
+// Layout - Get side panel state
+ipcMain.handle("get-side-panel-state", async () => {
+  try {
+    return settingsManager.getSidePanelCollapsed();
+  } catch (err) {
+    console.error("Errore nel leggere lo stato della sidebar:", err);
+    throw err;
+  }
+});
+
+// Layout - Set side panel state
+ipcMain.handle("set-side-panel-state", async (_, collapsed: boolean) => {
+  try {
+    settingsManager.updateSidePanelCollapsed(collapsed);
+    return true;
+  } catch (err) {
+    console.error("Errore nell'impostare lo stato della sidebar:", err);
     throw err;
   }
 });

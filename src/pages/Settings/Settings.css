@@ -1,0 +1,129 @@
+/* Settings page custom styles */
+.settings-container {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.settings-section {
+  transition: all 0.2s ease-in-out;
+}
+
+.settings-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.language-option {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.language-option:hover {
+  transform: scale(1.05);
+}
+
+.language-option.selected {
+  animation: pulse 2s infinite;
+}
+
+.path-input-container {
+  position: relative;
+}
+
+.path-input-container input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.success-message {
+  animation: slideInDown 0.3s ease-out;
+}
+
+.error-message {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 246, 100, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(59, 246, 100, 0);
+  }
+}
+
+/* Dark mode adjustments */
+.dark .settings-section:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.dark .language-option:hover {
+  background-color: rgba(55, 65, 81, 0.8);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .language-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .path-input-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .path-input-container input {
+    width: 100%;
+  }
+  
+  .path-input-container button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .language-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-container {
+    padding: 1rem;
+  }
+  
+  .settings-section {
+    padding: 1rem;
+  }
+}

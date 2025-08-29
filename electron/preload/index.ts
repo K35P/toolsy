@@ -6,16 +6,29 @@ contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
   close: () => ipcRenderer.send('window:close'),
+  
   // ImageConverter: Image conversions API
   convertImage: (filePath: string, format: string, quality?: number) => ipcRenderer.invoke("convert-image", filePath, format, quality),
   ensureConversionsDir: () => ipcRenderer.invoke("ensure-conversions-dir"),
   selectImage: () => ipcRenderer.invoke("select-image"),
   openPath: (folderPath: string) => ipcRenderer.invoke("open-path", folderPath),
+
   // MyFiles: File management API
   getConvertedFiles: () => ipcRenderer.invoke("get-converted-files"),
   openConvertedFile: (filePath: string) => ipcRenderer.invoke("open-converted-file", filePath),
   deleteConvertedFile: (filePath: string) => ipcRenderer.invoke("delete-converted-file", filePath),
   openConversionsFolder: () => ipcRenderer.invoke("open-conversions-folder"),
+
+  // Settings: Settings management API
+  selectOutputFolder: () => ipcRenderer.invoke("select-output-folder"),
+  getCustomOutputPath: () => ipcRenderer.invoke("get-custom-output-path"),
+  setCustomOutputPath: (customPath: string) => ipcRenderer.invoke("set-custom-output-path", customPath),
+  getSettings: () => ipcRenderer.invoke("get-settings"),
+  updateSettings: (newSettings: any) => ipcRenderer.invoke("update-settings", newSettings),
+
+  // SidePanel: Side panel layout component state management API
+  getSidePanelState: () => ipcRenderer.invoke("get-side-panel-state"),
+  setSidePanelState: (collapsed: boolean) => ipcRenderer.invoke("set-side-panel-state", collapsed),
 })
 
 // --------- Expose some API for the Windows Buttons ---------
