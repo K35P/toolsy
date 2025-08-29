@@ -22,8 +22,8 @@ const Home: React.FC = () => {
 
   return (
     <div className="h-auto">
-      {/* <HeroSection />
-      <hr className="border border-white/5 my-10" /> */}
+      <HeroSection />
+      <hr className="border border-white/5 my-10" />
       {selectedTool !== null && (
         <div className="btn-primary">
           <ArrowLeftIcon className="size-5 cursor-pointer" title="Torna indietro" onClick={() => setSelectedTool(null)}/>

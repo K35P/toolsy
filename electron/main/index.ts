@@ -130,6 +130,32 @@ ipcMain.on('window:close', () => {
 })
 
 // Conversions modules
+ipcMain.handle("open-path", async (_, filePath: string) => {
+  const folder = path.dirname(filePath);
+  return shell.openPath(folder);
+});
+
+ipcMain.handle("select-image", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: [
+      { name: "Images", extensions: ["jpg", "jpeg", "png", "webp", "avif", "tiff", "svg"] },
+    ],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0]; // absolute path
+});
+
+ipcMain.handle("convert-image", async (_, inputPath: string, format: string, quality?: number) => {
+  if (!inputPath) throw new Error("Percorso file non valido");
+
+  const desktopDir = app.getPath("desktop");
+  const outputDir = path.join(desktopDir, "Toolsy Conversions");
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+  return await convertImage(inputPath, outputDir, { format: format as any, quality });
+});
+
 ipcMain.handle("ensure-conversions-dir", async () => {
   try {
     // pick the current user's desktop
@@ -148,28 +174,73 @@ ipcMain.handle("ensure-conversions-dir", async () => {
   }
 });
 
-ipcMain.handle("convert-image", async (_, inputPath: string, format: string, quality?: number) => {
-  if (!inputPath) throw new Error("Percorso file non valido");
-
-  const desktopDir = app.getPath("desktop");
-  const outputDir = path.join(desktopDir, "Toolsy Conversions");
-  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-
-  return await convertImage(inputPath, outputDir, { format: format as any, quality });
+// MyFiles - files management API
+ipcMain.handle("open-converted-file", async (_, filePath: string) => {
+  try {
+    return shell.openPath(filePath);
+  } catch (err) {
+    console.error("Errore nell'aprire il file:", err);
+    throw err;
+  }
 });
 
-ipcMain.handle("select-image", async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ["openFile"],
-    filters: [
-      { name: "Images", extensions: ["jpg", "jpeg", "png", "webp", "avif", "tiff", "svg"] },
-    ],
-  });
-  if (result.canceled || result.filePaths.length === 0) return null;
-  return result.filePaths[0]; // absolute path
+ipcMain.handle("delete-converted-file", async (_, filePath: string) => {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("Errore nell'eliminare il file:", err);
+    throw err;
+  }
 });
 
-ipcMain.handle("open-path", async (_, filePath: string) => {
-  const folder = path.dirname(filePath);
-  return shell.openPath(folder);
+ipcMain.handle("get-converted-files", async () => {
+  try {
+    const desktopDir = app.getPath("desktop");
+    const conversionsDir = path.join(desktopDir, "Toolsy Conversions");
+    
+    if (!fs.existsSync(conversionsDir)) {
+      return [];
+    }
+
+    const files = fs.readdirSync(conversionsDir);
+    const fileStats = files.map(file => {
+      const filePath = path.join(conversionsDir, file);
+      const stats = fs.statSync(filePath);
+      return {
+        name: file,
+        path: filePath,
+        size: stats.size,
+        modified: stats.mtime,
+        isDirectory: stats.isDirectory()
+      };
+    });
+
+    // Ordina per data di modifica (più recenti prima)
+    return fileStats.sort((a, b) => b.modified.getTime() - a.modified.getTime());
+  } catch (err) {
+    console.error("Errore nel leggere i file convertiti:", err);
+    throw err;
+  }
+});
+
+ipcMain.handle("open-conversions-folder", async () => {
+  try {
+    const desktopDir = app.getPath("desktop");
+    const conversionsDir = path.join(desktopDir, "Toolsy Conversions");
+    
+    // Ensure that folder exist
+    if (!fs.existsSync(conversionsDir)) {
+      fs.mkdirSync(conversionsDir, { recursive: true });
+    }
+    
+    // Open the folder from system file manager
+    return shell.openPath(conversionsDir);
+  } catch (err) {
+    console.error("Errore nell'aprire la cartella Toolsy Conversions:", err);
+    throw err;
+  }
 });
