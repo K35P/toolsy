@@ -1,7 +1,7 @@
 import WindowsButtons from "./WindowsButtons"
 
 export default function TopBar() {
-  const isWindows = window.api.platform === "win32"
+  const isWindows = window.electronAPI.platform === "win32"
 
   return (
     <div className="topbar">

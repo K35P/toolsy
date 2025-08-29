@@ -143,7 +143,7 @@ ipcMain.handle("ensure-conversions-dir", async () => {
 
     return dir;
   } catch (err) {
-    console.error("Errore creando la cartella Toolsy Conversions:", err);
+    console.error("Errore creating Toolsy Conversions folder:", err);
     throw err;
   }
 });
@@ -166,7 +166,7 @@ ipcMain.handle("select-image", async () => {
     ],
   });
   if (result.canceled || result.filePaths.length === 0) return null;
-  return result.filePaths[0]; // percorso assoluto
+  return result.filePaths[0]; // absolute path
 });
 
 ipcMain.handle("open-path", async (_, filePath: string) => {

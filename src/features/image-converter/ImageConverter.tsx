@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from "react";
+import { CheckIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 
 const ImageConverter: React.FC = () => {
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -6,12 +7,11 @@ const ImageConverter: React.FC = () => {
   const [targetFormat, setTargetFormat] = useState<string>("png");
   const [quality, setQuality] = useState<number>(80);
   const [result, setResult] = useState<string>("");
-  const [isDragging, setIsDragging] = useState(false);
 
   const outputFormats = ["png", "jpeg", "webp", "avif", "tiff"];
   const supportsQuality = ["jpeg", "webp", "avif", "tiff"];
 
-  // Selezione file tramite dialog
+  // Select file through dialog
   const handleSelectFile = async () => {
     const path = await window.electronAPI.selectImage();
     if (!path) return;
@@ -20,39 +20,7 @@ const ImageConverter: React.FC = () => {
     setSourceFormat(ext ?? "");
   };
 
-  // Drag & Drop events
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files.length === 0) return;
-
-    // 🔹 Passiamo il path al preload
-    window.electronAPI.handleDroppedFile(files[0].path);
-  }, []);
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => setIsDragging(false);
-
-  // 🔹 Ascoltiamo l'evento CustomEvent dal preload
-  useEffect(() => {
-    const listener = (e: any) => {
-      const path = e.detail as string | null;
-      if (!path) return;
-      setFilePath(path);
-      const ext = path.split(".").pop();
-      setSourceFormat(ext ?? "");
-    };
-    window.addEventListener("file-dropped", listener);
-    return () => window.removeEventListener("file-dropped", listener);
-  }, []);
-
-  // Conversione immagine
+  // Image conversion
   const handleConvert = async () => {
     if (!filePath) return;
 
@@ -70,34 +38,29 @@ const ImageConverter: React.FC = () => {
     <div className="p-6 text-center max-w-lg mx-auto text-white">
       <h1 className="text-3xl font-bold">Image Converter</h1>
       <p className="mt-2 text-gray-300">
-        Trascina un’immagine qui o clicca per selezionarla e convertila in un altro formato.
+        Clicca per selezionare un'immagine e convertila in un altro formato.
       </p>
 
-      {/* Drag & Drop Area */}
-      <div
-        className={`mt-6 border-2 border-dashed rounded-lg p-12 cursor-pointer transition-colors
-          ${isDragging ? "border-blue-400 bg-white/10" : "border-gray-600 bg-black/20"}
-          hover:border-blue-400 hover:bg-white/10`}
+      {/* File Selection Area */}
+      <div 
+        className="mt-6 border-2 border-dashed rounded-lg p-12 cursor-pointer transition-colors border-gray-600 bg-black/20 hover:border-green-300 hover:bg-white/10" 
         onClick={handleSelectFile}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
       >
         {filePath ? (
           <p className="break-words">{filePath}</p>
         ) : (
-          <p className="text-gray-400">Trascina qui o clicca per selezionare</p>
+          <p className="text-gray-400">Clicca per selezionare un'immagine</p>
         )}
       </div>
 
-      {/* Info formato sorgente */}
+      {/* Info source format */}
       {filePath && (
         <p className="mt-4 text-gray-200">
           Formato rilevato: <strong>{sourceFormat}</strong>
         </p>
       )}
 
-      {/* Select formato destinazione */}
+      {/* Select destination format */}
       {filePath && (
         <div className="mt-4 flex justify-center items-center gap-2">
           <label>Converti in:</label>
@@ -113,7 +76,7 @@ const ImageConverter: React.FC = () => {
         </div>
       )}
 
-      {/* Slider qualità se supportato */}
+      {/* Slider quality if supported */}
       {filePath && supportsQuality.includes(targetFormat) && (
         <div className="mt-4 flex justify-center items-center gap-2">
           <label>Qualità: {quality}</label>
@@ -140,18 +103,15 @@ const ImageConverter: React.FC = () => {
         </div>
       )}
 
-      {/* Risultato */}
+      {/* Result */}
       {result && (
-        <div className="mt-4 text-green-400 break-words">
-          ✅ File convertito e salvato in: <br />
-          <span className="font-mono">{result}</span>
+        <div className="mt-4 break-words">
+          <div className="bg-green-300/10 text-green-300 rounded rounded-xl flex flex-col items-center justify-start">
+            <span><CheckIcon className="size-4" /> File convertito e salvato in: <br /></span>
+            <small className="font-mono">{result}</small>
+          </div>
           <div className="mt-2">
-            <button
-              onClick={() => window.electronAPI.openPath(result)}
-              className="px-4 py-1 bg-gray-800 rounded hover:bg-gray-700 transition-colors"
-            >
-              Apri cartella
-            </button>
+            <button onClick={() => window.electronAPI.openPath(result)} >Apri cartella</button>
           </div>
         </div>
       )}

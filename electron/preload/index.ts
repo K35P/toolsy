@@ -6,10 +6,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   ensureConversionsDir: () => ipcRenderer.invoke("ensure-conversions-dir"),
   selectImage: () => ipcRenderer.invoke("select-image"),
   openPath: (filePath: string) => ipcRenderer.invoke("open-path", filePath),
-  handleDroppedFile: (filePath: string) => {
-    const event = new CustomEvent("file-dropped", { detail: filePath });
-    window.dispatchEvent(event);
-  },
 });
 
 // --------- Expose some API for the Windows Buttons ---------

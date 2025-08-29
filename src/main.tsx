@@ -11,7 +11,7 @@ import './demos/ipc'
 // If you want use Node.js, the`nodeIntegration` needs to be enabled in the Main process.
 // import './demos/node'
 
-if (window.api.platform === 'win32') {
+if (window.electronAPI.platform === 'win32') {
   document.body.classList.add('windows')
 }
 

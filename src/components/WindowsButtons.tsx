@@ -1,5 +1,5 @@
 export default function WindowsButtons() {
-  const isWindows = window.api.platform === "win32"
+  const isWindows = window.electronAPI.platform === "win32"
 
   if (!isWindows) return null
 
@@ -7,7 +7,7 @@ export default function WindowsButtons() {
     <div className="absolute top-0 right-0 h-8 flex items-center z-[9999] no-drag">
       {/* Minimize */}
       <button
-        onClick={() => window.api.minimize()}
+        onClick={() => window.electronAPI.minimize()}
         className="w-12 h-7 flex items-center justify-center bg-transparent border-none rounded-none global-hover-bg text-white"
       >
         &#8211;
@@ -15,7 +15,7 @@ export default function WindowsButtons() {
 
       {/* Maximize */}
       <button
-        onClick={() => window.api.maximize()}
+        onClick={() => window.electronAPI.maximize()}
         className="w-12 h-7 flex items-center justify-center bg-transparent border-none rounded-none global-hover-bg text-white"
       >
         ☐
@@ -23,7 +23,7 @@ export default function WindowsButtons() {
 
       {/* Close */}
       <button
-        onClick={() => window.api.close()}
+        onClick={() => window.electronAPI.close()}
         className="w-12 h-7 flex items-center justify-center bg-transparent border-none rounded-none hover:bg-red-600/80 text-white"
       >
         ✕
