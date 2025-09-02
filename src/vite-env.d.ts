@@ -11,7 +11,7 @@ interface Window {
     maximize: () => void
     close: () => void
 
-    // ImageConverter: conversions API
+    // ImageConverter: Image conversions API
     convertImage: (filePath: string, format: string, quality?: number) => Promise<string>;
     ensureConversionsDir: () => Promise<string>;
     selectImage: () => Promise<string | null>; // native dialog

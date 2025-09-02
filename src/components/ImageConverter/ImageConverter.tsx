@@ -34,6 +34,10 @@ const ImageConverter: React.FC = () => {
     setResult(output);
   };
 
+  const handleClickOpenConversionsPath = () => {
+    window.electronAPI.openPath(result);
+  }
+
   return (
     <div className="p-6 text-center max-w-lg mx-auto text-white">
       <h1 className="text-3xl font-bold">Image Converter</h1>
@@ -111,7 +115,7 @@ const ImageConverter: React.FC = () => {
             <small className="font-mono">{result}</small>
           </div>
           <div className="mt-2">
-            <button onClick={() => window.electronAPI.openPath(result)} >Apri cartella</button>
+            <button onClick={handleClickOpenConversionsPath} >Apri cartella</button>
           </div>
         </div>
       )}

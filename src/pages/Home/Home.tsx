@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import HeroSection from "./components/HeroSection";
-import ImageConverter from "@/features/image-converter/ImageConverter";
+import ImageConverter from "@/components/ImageConverter/ImageConverter";
 import ToolSelection from "@/components/ToolSelection";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 

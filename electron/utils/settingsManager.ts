@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { app } from 'electron';
 
@@ -99,10 +100,10 @@ class SettingsManager {
     if (this.settings.outputPath && this.settings.outputPath.trim() !== '') {
       return this.settings.outputPath;
     }
-    
-    // Default path: Desktop/Toolsy Conversions
-    const desktopDir = app.getPath('desktop');
-    return path.join(desktopDir, 'Toolsy Conversions');
+
+    // Use the current user's home
+    const desktopDir = path.join(os.homedir(), "Desktop");
+    return path.join(desktopDir, "Toolsy Conversions");
   }
 }
 

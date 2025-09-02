@@ -8,17 +8,17 @@ export async function convertImage(
   options: { format: string; quality?: number }
 ): Promise<string> {
   const ext = options.format.toLowerCase();
-  const baseName = path.basename(inputPath, path.extname(inputPath)); // nome senza estensione
+  const baseName = path.basename(inputPath, path.extname(inputPath)); // name without extension
   let outputPath = path.join(outputDir, `${baseName}.${ext}`);
 
-  // 🔹 Controllo duplicati
+  // Check for duplicates
   let counter = 1;
   while (fs.existsSync(outputPath)) {
     outputPath = path.join(outputDir, `${baseName} (${counter}).${ext}`);
     counter++;
   }
 
-  // Conversione con Sharp
+  // Conversion with Sharp
   try {
     const image = sharp(inputPath);
 
@@ -31,7 +31,7 @@ export async function convertImage(
         break;
 
       case "png":
-        // PNG è lossless → uso compressione, non qualità
+        // PNG is lossless -> use compression, not quality
         await image
           .png({ compressionLevel: 9 })
           .toFile(outputPath);
@@ -45,7 +45,7 @@ export async function convertImage(
 
       case "avif":
         await image
-          .avif({ quality: options.quality ?? 50 }) // default 50 per AVIF
+          .avif({ quality: options.quality ?? 50 }) // default 50 for AVIF
           .toFile(outputPath);
         break;
 
@@ -56,12 +56,12 @@ export async function convertImage(
         break;
 
       default:
-        throw new Error(`Formato non supportato: ${ext}`);
+        throw new Error(`Format not supported: ${ext}`);
     }
 
     return outputPath;
   } catch (err) {
-    console.error("Errore durante la conversione:", err);
+    console.error("Error during conversion:", err);
     throw err;
   }
 }
