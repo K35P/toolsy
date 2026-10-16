@@ -7,11 +7,12 @@ import pkg from './package.json'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => {
-  rmSync('dist-electron', { recursive: true, force: true })
-
   const isServe = command === 'serve'
   const isBuild = command === 'build'
+  const isTauri = Boolean(process.env.TAURI_ENV_PLATFORM)
   const sourcemap = isServe || !!process.env.VSCODE_DEBUG
+
+  if (!isTauri) rmSync('dist-electron', { recursive: true, force: true })
 
   return {
     resolve: {
@@ -21,7 +22,7 @@ export default defineConfig(({ command }) => {
     },
     plugins: [
       react(),
-      electron({
+      ...(!isTauri ? [electron({
         main: {
           // Shortcut of `build.lib.entry`
           entry: 'electron/main/index.ts',
@@ -62,15 +63,15 @@ export default defineConfig(({ command }) => {
         // If you want use Node.js in Renderer process, the `nodeIntegration` needs to be enabled in the Main process.
         // See 👉 https://github.com/electron-vite/vite-plugin-electron-renderer
         renderer: {},
-      }),
+      })] : []),
     ],
-    server: process.env.VSCODE_DEBUG && (() => {
+    server: isTauri ? { host: '127.0.0.1', port: 1420, strictPort: true } : process.env.VSCODE_DEBUG ? (() => {
       const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
       return {
         host: url.hostname,
         port: +url.port,
       }
-    })(),
+    })() : undefined,
     clearScreen: false,
   }
 })

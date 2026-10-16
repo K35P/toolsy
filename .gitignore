@@ -14,6 +14,9 @@ dist-electron
 release
 *.local
 
+# Local working docs (not tracked)
+MIGRATION_TAURI.md
+
 # Editor directories and files
 .vscode/.debug.env
 .idea

@@ -6,12 +6,12 @@ import App from './App'
 
 import './index.css'
 import './css/_helper.css'
-import './demos/ipc'
+import { desktopApi } from './api/desktop'
 
 // If you want use Node.js, the`nodeIntegration` needs to be enabled in the Main process.
 // import './demos/node'
 
-if (window.electronAPI.platform === 'win32') {
+if (desktopApi.platform === 'win32') {
   document.body.classList.add('windows')
 }
 

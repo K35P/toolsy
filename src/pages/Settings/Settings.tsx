@@ -9,6 +9,7 @@ import {
   LightBulbIcon
 } from '@heroicons/react/24/outline';
 import './Settings.css';
+import { desktopApi } from '../../api/desktop';
 
 const Settings = () => {
   const { 
@@ -56,7 +57,7 @@ const Settings = () => {
   const openFolderPicker = async () => {
     try {
       // Chiamata IPC per aprire il selettore di cartelle
-      const result = await window.electronAPI.selectOutputFolder();
+      const result = await desktopApi.selectOutputFolder();
       if (result && result.canceled === false && result.filePaths.length > 0) {
         const selectedPath = result.filePaths[0];
         setLocalOutputPath(selectedPath);
@@ -250,6 +251,7 @@ const Settings = () => {
                   href="https://github.com/K35P/toolsy" 
                   target="_blank" 
                   rel="noopener noreferrer"
+                  onClick={(event) => { event.preventDefault(); void desktopApi.openExternal(event.currentTarget.href); }}
                   className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors duration-200 underline"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

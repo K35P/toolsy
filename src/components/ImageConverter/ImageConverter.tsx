@@ -1,5 +1,6 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
+import { desktopApi } from "../../api/desktop";
 
 const ImageConverter: React.FC = () => {
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -13,7 +14,7 @@ const ImageConverter: React.FC = () => {
 
   // Select file through dialog
   const handleSelectFile = async () => {
-    const path = await window.electronAPI.selectImage();
+    const path = await desktopApi.selectImage();
     if (!path) return;
     setFilePath(path);
     const ext = path.split(".").pop();
@@ -24,9 +25,9 @@ const ImageConverter: React.FC = () => {
   const handleConvert = async () => {
     if (!filePath) return;
 
-    await window.electronAPI.ensureConversionsDir();
+    await desktopApi.ensureConversionsDir();
 
-    const output = await window.electronAPI.convertImage(
+    const output = await desktopApi.convertImage(
       filePath,
       targetFormat,
       quality
@@ -34,8 +35,8 @@ const ImageConverter: React.FC = () => {
     setResult(output);
   };
 
-  const handleClickOpenConversionsPath = () => {
-    window.electronAPI.openPath(result);
+  const handleClickOpenConversionsPath = async () => {
+    await desktopApi.openPath(result);
   }
 
   return (

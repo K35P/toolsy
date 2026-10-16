@@ -15,17 +15,25 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "build:web:tauri": "tsc -p tsconfig.web.json && vite build",
     "preview": "vite preview",
     "pretest": "vite build --mode=test",
     "test": "vitest run"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-opener": "^2",
     "@heroicons/react": "^2.2.0",
     "electron-updater": "^6.3.9",
     "react-router": "^7.8.2",
     "sharp": "^0.34.3"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
     "@playwright/test": "^1.48.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
