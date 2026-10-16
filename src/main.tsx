@@ -14,6 +14,9 @@ import { desktopApi } from './api/desktop'
 if (desktopApi.platform === 'win32') {
   document.body.classList.add('windows')
 }
+if (desktopApi.platform === 'darwin') {
+  document.body.classList.add('macos')
+}
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

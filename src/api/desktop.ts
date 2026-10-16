@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import type { ElectronAPI } from '../types/electron-api'
 
-const tauriRuntime = isTauri()
+const tauriRuntime = __TOOLSY_TAURI_BUILD__ || isTauri()
 
 const platform = (() => {
   const agent = navigator.userAgent.toLowerCase()

@@ -23,4 +23,9 @@ dirs = "6"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "avif", "tiff"] }
 webp = "0.3"
 resvg = "0.45.1"
+tiff-core = "0.8.1"
+tiff-writer = { version = "0.8.1", default-features = false, features = ["jpeg"] }
+
+[dev-dependencies]
+tiff-reader = { version = "0.8.1", default-features = false, features = ["jpeg"] }
 

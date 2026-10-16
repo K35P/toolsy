@@ -13,7 +13,12 @@ pub struct AppSettings {
 
 impl Default for AppSettings {
     fn default() -> Self {
-        Self { language: "it".into(), output_path: String::new(), theme: "light".into(), side_panel_collapsed: false }
+        Self {
+            language: "it".into(),
+            output_path: String::new(),
+            theme: "light".into(),
+            side_panel_collapsed: false,
+        }
     }
 }
 
@@ -22,22 +27,29 @@ pub struct SettingsStore(pub AppSettings);
 
 impl SettingsStore {
     fn path(app: &AppHandle) -> Result<PathBuf, String> {
-        app.path().app_data_dir().map(|p| p.join("settings.json")).map_err(|e| e.to_string())
+        app.path()
+            .app_data_dir()
+            .map(|p| p.join("settings.json"))
+            .map_err(|e| e.to_string())
     }
 
     pub fn load(&mut self, app: &AppHandle) -> Result<(), String> {
         let path = Self::path(app)?;
         match fs::read_to_string(&path) {
-            Ok(json) => self.0 = serde_json::from_str(&json).map_err(|e| format!("Impostazioni non valide: {e}"))?,
+            Ok(json) => {
+                self.0 = serde_json::from_str(&json)
+                    .map_err(|e| format!("Impostazioni non valide: {e}"))?
+            }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 if let Some(config_dir) = dirs::config_dir() {
                     let legacy_path = config_dir.join("Toolsy").join("settings.json");
                     if let Ok(json) = fs::read_to_string(legacy_path) {
-                        self.0 = serde_json::from_str(&json).map_err(|e| format!("Impostazioni Electron non valide: {e}"))?;
+                        self.0 = serde_json::from_str(&json)
+                            .map_err(|e| format!("Impostazioni Electron non valide: {e}"))?;
                         self.save(app)?;
                     }
                 }
-            },
+            }
             Err(e) => return Err(format!("Impossibile leggere le impostazioni: {e}")),
         }
         Ok(())
@@ -50,7 +62,9 @@ impl SettingsStore {
         let json = serde_json::to_vec_pretty(&self.0).map_err(|e| e.to_string())?;
         let temp = path.with_extension("json.tmp");
         fs::write(&temp, json).map_err(|e| e.to_string())?;
-        if path.exists() { fs::remove_file(&path).map_err(|e| e.to_string())?; }
+        if path.exists() {
+            fs::remove_file(&path).map_err(|e| e.to_string())?;
+        }
         fs::rename(temp, path).map_err(|e| e.to_string())
     }
 }

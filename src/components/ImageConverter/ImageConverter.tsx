@@ -12,7 +12,7 @@ const ImageConverter: React.FC = () => {
   const [isConverting, setIsConverting] = useState(false);
 
   const outputFormats = ["png", "jpeg", "webp", "avif", "tiff"];
-  const supportsQuality = ["jpeg", "webp", "avif"];
+  const supportsQuality = ["jpeg", "webp", "avif", "tiff"];
 
   // Select file through dialog
   const handleSelectFile = async () => {

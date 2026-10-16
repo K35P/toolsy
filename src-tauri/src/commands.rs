@@ -1,13 +1,30 @@
 use crate::settings::{AppSettings, SettingsStore};
-use image::{codecs::{avif::AvifEncoder, jpeg::JpegEncoder}, DynamicImage, ImageEncoder, ImageFormat};
+use image::{
+    codecs::{
+        avif::AvifEncoder,
+        jpeg::JpegEncoder,
+        png::{CompressionType, FilterType, PngEncoder},
+    },
+    DynamicImage, ImageEncoder,
+};
 use serde::{Deserialize, Serialize};
-use std::{fs, io::BufWriter, path::{Path, PathBuf}, sync::Mutex, time::UNIX_EPOCH};
+use std::{
+    fs,
+    io::BufWriter,
+    path::{Path, PathBuf},
+    sync::Mutex,
+    time::UNIX_EPOCH,
+};
 use tauri::{AppHandle, Manager, State};
 
 const MAX_SVG_PIXELS: u64 = 100_000_000;
 
 fn decode_input(path: &Path) -> Result<DynamicImage, String> {
-    if path.extension().and_then(|extension| extension.to_str()).is_some_and(|extension| extension.eq_ignore_ascii_case("svg")) {
+    if path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("svg"))
+    {
         let data = fs::read(path).map_err(|e| format!("Impossibile leggere il file SVG: {e}"))?;
         let mut options = resvg::usvg::Options::default();
         options.fontdb_mut().load_system_fonts();
@@ -16,11 +33,17 @@ fn decode_input(path: &Path) -> Result<DynamicImage, String> {
         let size = tree.size().to_int_size();
         let pixel_count = u64::from(size.width()) * u64::from(size.height());
         if size.width() == 0 || size.height() == 0 || pixel_count > MAX_SVG_PIXELS {
-            return Err("Le dimensioni dell'SVG superano il limite di sicurezza (100 megapixel)".into());
+            return Err(
+                "Le dimensioni dell'SVG superano il limite di sicurezza (100 megapixel)".into(),
+            );
         }
         let mut pixmap = resvg::tiny_skia::Pixmap::new(size.width(), size.height())
             .ok_or("Impossibile allocare la memoria per rasterizzare l'SVG")?;
-        resvg::render(&tree, resvg::tiny_skia::Transform::default(), &mut pixmap.as_mut());
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::default(),
+            &mut pixmap.as_mut(),
+        );
         let image = image::RgbaImage::from_raw(size.width(), size.height(), pixmap.data().to_vec())
             .ok_or("Impossibile leggere l'immagine rasterizzata")?;
         return Ok(DynamicImage::ImageRgba8(image));
@@ -34,8 +57,94 @@ fn decode_input(path: &Path) -> Result<DynamicImage, String> {
         .map_err(|e| format!("Formato immagine non leggibile: {e}"))
 }
 
-fn effective_output_dir(app: &AppHandle, settings: &Mutex<SettingsStore>) -> Result<PathBuf, String> {
-    let mut store = settings.lock().map_err(|_| "Impostazioni non disponibili")?;
+fn encode_tiff_jpeg(path: &Path, image: &DynamicImage, quality: u8) -> Result<(), String> {
+    use tiff_core::PhotometricInterpretation;
+    use tiff_writer::{ImageBuilder, JpegOptions, TiffWriter, WriteOptions};
+
+    let rgb = image.to_rgb8();
+    let width = rgb.width();
+    let height = rgb.height();
+    let rows_per_strip = height.min(256).max(1);
+    let builder = ImageBuilder::new(width, height)
+        .sample_type::<u8>()
+        .samples_per_pixel(3)
+        .photometric(PhotometricInterpretation::YCbCr)
+        .strips(rows_per_strip)
+        .jpeg_options(JpegOptions { quality });
+    let file = fs::File::create(path).map_err(|e| e.to_string())?;
+    let mut writer = TiffWriter::new(file, WriteOptions::default()).map_err(|e| e.to_string())?;
+    let handle = writer.add_image(builder).map_err(|e| e.to_string())?;
+    let samples_per_strip = (width as usize) * (rows_per_strip as usize) * 3;
+    for (index, strip) in rgb.as_raw().chunks(samples_per_strip).enumerate() {
+        let samples = strip.iter().copied().collect::<Vec<_>>();
+        writer
+            .write_block(&handle, index, &samples)
+            .map_err(|e| e.to_string())?;
+    }
+    writer.finish().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn encode_image(
+    path: &Path,
+    image: &DynamicImage,
+    format: &str,
+    quality: u8,
+) -> Result<(), String> {
+    match format {
+        "jpg" | "jpeg" => {
+            let rgb = image.to_rgb8();
+            let file = fs::File::create(path).map_err(|e| e.to_string())?;
+            let mut writer = BufWriter::new(file);
+            JpegEncoder::new_with_quality(&mut writer, quality)
+                .encode_image(&DynamicImage::ImageRgb8(rgb))
+                .map_err(|e| e.to_string())?;
+        }
+        "png" => {
+            let rgba = image.to_rgba8();
+            let file = fs::File::create(path).map_err(|e| e.to_string())?;
+            let mut writer = BufWriter::new(file);
+            PngEncoder::new_with_quality(&mut writer, CompressionType::Best, FilterType::Adaptive)
+                .write_image(
+                    rgba.as_raw(),
+                    rgba.width(),
+                    rgba.height(),
+                    image::ExtendedColorType::Rgba8,
+                )
+                .map_err(|e| e.to_string())?;
+        }
+        "webp" => {
+            let memory = webp::Encoder::from_image(image)
+                .map_err(|e| format!("Immagine WebP non valida: {e}"))?
+                .encode(quality as f32);
+            fs::write(path, &*memory).map_err(|e| e.to_string())?;
+        }
+        "avif" => {
+            let rgba = image.to_rgba8();
+            let file = fs::File::create(path).map_err(|e| e.to_string())?;
+            let mut writer = BufWriter::new(file);
+            AvifEncoder::new_with_speed_quality(&mut writer, 6, quality)
+                .write_image(
+                    rgba.as_raw(),
+                    rgba.width(),
+                    rgba.height(),
+                    image::ExtendedColorType::Rgba8,
+                )
+                .map_err(|e| e.to_string())?;
+        }
+        "tiff" => encode_tiff_jpeg(path, image, quality)?,
+        _ => return Err(format!("Formato non supportato: {format}")),
+    }
+    Ok(())
+}
+
+fn effective_output_dir(
+    app: &AppHandle,
+    settings: &Mutex<SettingsStore>,
+) -> Result<PathBuf, String> {
+    let mut store = settings
+        .lock()
+        .map_err(|_| "Impostazioni non disponibili")?;
     store.load(app)?;
     if !store.0.output_path.trim().is_empty() {
         return Ok(PathBuf::from(store.0.output_path.trim()));
@@ -46,11 +155,20 @@ fn effective_output_dir(app: &AppHandle, settings: &Mutex<SettingsStore>) -> Res
 
 #[tauri::command]
 pub fn get_platform() -> &'static str {
-    if cfg!(target_os = "windows") { "win32" } else if cfg!(target_os = "macos") { "darwin" } else { "linux" }
+    if cfg!(target_os = "windows") {
+        "win32"
+    } else if cfg!(target_os = "macos") {
+        "darwin"
+    } else {
+        "linux"
+    }
 }
 
 #[tauri::command]
-pub fn ensure_conversions_dir(app: AppHandle, settings: State<'_, Mutex<SettingsStore>>) -> Result<String, String> {
+pub fn ensure_conversions_dir(
+    app: AppHandle,
+    settings: State<'_, Mutex<SettingsStore>>,
+) -> Result<String, String> {
     let path = effective_output_dir(&app, &settings)?;
     fs::create_dir_all(&path).map_err(|e| format!("Impossibile creare la cartella: {e}"))?;
     Ok(path.to_string_lossy().into_owned())
@@ -67,80 +185,135 @@ pub struct ConvertedFile {
 }
 
 #[tauri::command]
-pub fn list_converted_files(app: AppHandle, settings: State<'_, Mutex<SettingsStore>>) -> Result<Vec<ConvertedFile>, String> {
+pub fn list_converted_files(
+    app: AppHandle,
+    settings: State<'_, Mutex<SettingsStore>>,
+) -> Result<Vec<ConvertedFile>, String> {
     let dir = effective_output_dir(&app, &settings)?;
-    if !dir.exists() { return Ok(Vec::new()); }
-    let mut items = fs::read_dir(&dir).map_err(|e| e.to_string())?
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    let mut items = fs::read_dir(&dir)
+        .map_err(|e| e.to_string())?
         .filter_map(Result::ok)
         .filter_map(|entry| {
             let meta = entry.metadata().ok()?;
-            let modified = meta.modified().unwrap_or(UNIX_EPOCH).duration_since(UNIX_EPOCH).unwrap_or_default().as_millis();
-            Some((modified, ConvertedFile {
-                name: entry.file_name().to_string_lossy().into_owned(),
-                path: entry.path().to_string_lossy().into_owned(),
-                size: meta.len(),
-                modified: modified.to_string(),
-                is_directory: meta.is_dir(),
-            }))
-        }).collect::<Vec<_>>();
+            let modified = meta
+                .modified()
+                .unwrap_or(UNIX_EPOCH)
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_millis();
+            Some((
+                modified,
+                ConvertedFile {
+                    name: entry.file_name().to_string_lossy().into_owned(),
+                    path: entry.path().to_string_lossy().into_owned(),
+                    size: meta.len(),
+                    modified: modified.to_string(),
+                    is_directory: meta.is_dir(),
+                },
+            ))
+        })
+        .collect::<Vec<_>>();
     items.sort_by(|a, b| b.0.cmp(&a.0));
     Ok(items.into_iter().map(|(_, item)| item).collect())
 }
 
-fn ensure_managed_path(app: &AppHandle, settings: &Mutex<SettingsStore>, candidate: &str) -> Result<PathBuf, String> {
-    let root = effective_output_dir(app, settings)?.canonicalize().map_err(|e| e.to_string())?;
-    let target = PathBuf::from(candidate).canonicalize().map_err(|e| e.to_string())?;
-    if target == root || target.starts_with(&root) { Ok(target) } else { Err("Il file è fuori dalla cartella delle conversioni".into()) }
+fn ensure_managed_path(
+    app: &AppHandle,
+    settings: &Mutex<SettingsStore>,
+    candidate: &str,
+) -> Result<PathBuf, String> {
+    let root = effective_output_dir(app, settings)?
+        .canonicalize()
+        .map_err(|e| e.to_string())?;
+    let target = PathBuf::from(candidate)
+        .canonicalize()
+        .map_err(|e| e.to_string())?;
+    if target == root || target.starts_with(&root) {
+        Ok(target)
+    } else {
+        Err("Il file è fuori dalla cartella delle conversioni".into())
+    }
 }
 
 #[tauri::command]
-pub fn open_path(app: AppHandle, settings: State<'_, Mutex<SettingsStore>>, file_path: String) -> Result<(), String> {
+pub fn open_path(
+    app: AppHandle,
+    settings: State<'_, Mutex<SettingsStore>>,
+    file_path: String,
+) -> Result<(), String> {
     let target = ensure_managed_path(&app, &settings, &file_path)?;
     let folder = target.parent().ok_or("Percorso file non valido")?;
     tauri_plugin_opener::open_path(folder, None::<&str>).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn open_converted_file(app: AppHandle, settings: State<'_, Mutex<SettingsStore>>, file_path: String) -> Result<(), String> {
+pub fn open_converted_file(
+    app: AppHandle,
+    settings: State<'_, Mutex<SettingsStore>>,
+    file_path: String,
+) -> Result<(), String> {
     let target = ensure_managed_path(&app, &settings, &file_path)?;
     tauri_plugin_opener::open_path(target, None::<&str>).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn open_conversions_folder(app: AppHandle, settings: State<'_, Mutex<SettingsStore>>) -> Result<(), String> {
+pub fn open_conversions_folder(
+    app: AppHandle,
+    settings: State<'_, Mutex<SettingsStore>>,
+) -> Result<(), String> {
     let folder = effective_output_dir(&app, &settings)?;
     fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
     tauri_plugin_opener::open_path(folder, None::<&str>).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn delete_converted_file(app: AppHandle, settings: State<'_, Mutex<SettingsStore>>, file_path: String) -> Result<bool, String> {
+pub fn delete_converted_file(
+    app: AppHandle,
+    settings: State<'_, Mutex<SettingsStore>>,
+    file_path: String,
+) -> Result<bool, String> {
     let target = match ensure_managed_path(&app, &settings, &file_path) {
         Ok(path) => path,
         Err(_) if !Path::new(&file_path).exists() => return Ok(false),
         Err(e) => return Err(e),
     };
-    if target.is_dir() { return Err("Non è consentito eliminare una cartella da questa schermata".into()); }
-    fs::remove_file(target).map(|_| true).map_err(|e| e.to_string())
+    if target.is_dir() {
+        return Err("Non è consentito eliminare una cartella da questa schermata".into());
+    }
+    fs::remove_file(target)
+        .map(|_| true)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn convert_image(app: AppHandle, settings: State<'_, Mutex<SettingsStore>>, input_path: String, format: String, quality: Option<u8>) -> Result<String, String> {
+pub async fn convert_image(
+    app: AppHandle,
+    settings: State<'_, Mutex<SettingsStore>>,
+    input_path: String,
+    format: String,
+    quality: Option<u8>,
+) -> Result<String, String> {
     let input = PathBuf::from(&input_path);
-    if !input.is_file() { return Err("File di input non trovato".into()); }
+    if !input.is_file() {
+        return Err("File di input non trovato".into());
+    }
     let ext = format.to_lowercase();
-    let image_format = match ext.as_str() {
-        "jpg" | "jpeg" => ImageFormat::Jpeg,
-        "png" => ImageFormat::Png,
-        "webp" => ImageFormat::WebP,
-        "avif" => ImageFormat::Avif,
-        "tiff" => ImageFormat::Tiff,
-        _ => return Err(format!("Formato non supportato: {ext}")),
-    };
+    if !matches!(
+        ext.as_str(),
+        "jpg" | "jpeg" | "png" | "webp" | "avif" | "tiff"
+    ) {
+        return Err(format!("Formato non supportato: {ext}"));
+    }
     let output_dir = effective_output_dir(&app, &settings)?;
     fs::create_dir_all(&output_dir).map_err(|e| e.to_string())?;
     tauri::async_runtime::spawn_blocking(move || {
-        let stem = input.file_stem().and_then(|s| s.to_str()).ok_or("Nome file non valido")?;
+        let stem = input
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .ok_or("Nome file non valido")?;
         let mut output = output_dir.join(format!("{stem}.{ext}"));
         let mut suffix = 1;
         while output.exists() {
@@ -149,40 +322,26 @@ pub async fn convert_image(app: AppHandle, settings: State<'_, Mutex<SettingsSto
         }
         let result = (|| -> Result<(), String> {
             let decoded = decode_input(&input)?;
-            let q = quality.unwrap_or(if ext == "avif" { 50 } else { 80 }).clamp(1, 100);
-            match ext.as_str() {
-                "jpg" | "jpeg" => {
-                    let rgb = decoded.to_rgb8();
-                    let file = fs::File::create(&output).map_err(|e| e.to_string())?;
-                    let mut writer = BufWriter::new(file);
-                    JpegEncoder::new_with_quality(&mut writer, q).encode_image(&DynamicImage::ImageRgb8(rgb)).map_err(|e| e.to_string())?;
-                }
-                "avif" => {
-                    let rgba = decoded.to_rgba8();
-                    let file = fs::File::create(&output).map_err(|e| e.to_string())?;
-                    let mut writer = BufWriter::new(file);
-                    AvifEncoder::new_with_speed_quality(&mut writer, 6, q)
-                        .write_image(rgba.as_raw(), rgba.width(), rgba.height(), image::ExtendedColorType::Rgba8)
-                        .map_err(|e| e.to_string())?;
-                }
-                "webp" => {
-                    let memory = webp::Encoder::from_image(&decoded).map_err(|e| format!("Immagine WebP non valida: {e}"))?.encode(q as f32);
-                    fs::write(&output, &*memory).map_err(|e| e.to_string())?;
-                }
-                _ => decoded.save_with_format(&output, image_format).map_err(|e| format!("Conversione non riuscita: {e}"))?,
-            }
-            Ok(())
+            let q = quality
+                .unwrap_or(if ext == "avif" { 50 } else { 80 })
+                .clamp(1, 100);
+            encode_image(&output, &decoded, &ext, q)
         })();
         if let Err(error) = result {
             let _ = fs::remove_file(&output);
             return Err(error);
         }
         Ok(output.to_string_lossy().into_owned())
-    }).await.map_err(|e| format!("Conversione interrotta: {e}"))?
+    })
+    .await
+    .map_err(|e| format!("Conversione interrotta: {e}"))?
 }
 
 #[tauri::command]
-pub fn get_settings(app: AppHandle, state: State<'_, Mutex<SettingsStore>>) -> Result<AppSettings, String> {
+pub fn get_settings(
+    app: AppHandle,
+    state: State<'_, Mutex<SettingsStore>>,
+) -> Result<AppSettings, String> {
     let mut store = state.lock().map_err(|_| "Impostazioni non disponibili")?;
     store.load(&app)?;
     Ok(store.0.clone())
@@ -198,47 +357,167 @@ pub struct SettingsPatch {
 }
 
 #[tauri::command]
-pub fn update_settings(app: AppHandle, state: State<'_, Mutex<SettingsStore>>, new_settings: SettingsPatch) -> Result<bool, String> {
+pub fn update_settings(
+    app: AppHandle,
+    state: State<'_, Mutex<SettingsStore>>,
+    new_settings: SettingsPatch,
+) -> Result<bool, String> {
     let mut store = state.lock().map_err(|_| "Impostazioni non disponibili")?;
     store.load(&app)?;
-    if let Some(language) = new_settings.language { store.0.language = language; }
-    if let Some(output_path) = new_settings.output_path { store.0.output_path = output_path; }
-    if let Some(theme) = new_settings.theme { store.0.theme = theme; }
-    if let Some(collapsed) = new_settings.side_panel_collapsed { store.0.side_panel_collapsed = collapsed; }
+    if let Some(language) = new_settings.language {
+        store.0.language = language;
+    }
+    if let Some(output_path) = new_settings.output_path {
+        store.0.output_path = output_path;
+    }
+    if let Some(theme) = new_settings.theme {
+        store.0.theme = theme;
+    }
+    if let Some(collapsed) = new_settings.side_panel_collapsed {
+        store.0.side_panel_collapsed = collapsed;
+    }
     store.save(&app)?;
     Ok(true)
 }
 
 #[tauri::command]
-pub fn get_custom_output_path(app: AppHandle, state: State<'_, Mutex<SettingsStore>>) -> Result<String, String> {
+pub fn get_custom_output_path(
+    app: AppHandle,
+    state: State<'_, Mutex<SettingsStore>>,
+) -> Result<String, String> {
     let mut store = state.lock().map_err(|_| "Impostazioni non disponibili")?;
     store.load(&app)?;
     Ok(store.0.output_path.clone())
 }
 
 #[tauri::command]
-pub fn set_custom_output_path(app: AppHandle, state: State<'_, Mutex<SettingsStore>>, custom_path: String) -> Result<bool, String> {
+pub fn set_custom_output_path(
+    app: AppHandle,
+    state: State<'_, Mutex<SettingsStore>>,
+    custom_path: String,
+) -> Result<bool, String> {
     let mut store = state.lock().map_err(|_| "Impostazioni non disponibili")?;
     store.load(&app)?;
     let normalized = custom_path.trim().to_string();
-    if !normalized.is_empty() { fs::create_dir_all(&normalized).map_err(|e| e.to_string())?; }
+    if !normalized.is_empty() {
+        fs::create_dir_all(&normalized).map_err(|e| e.to_string())?;
+    }
     store.0.output_path = normalized;
     store.save(&app)?;
     Ok(true)
 }
 
 #[tauri::command]
-pub fn get_side_panel_state(app: AppHandle, state: State<'_, Mutex<SettingsStore>>) -> Result<bool, String> {
+pub fn get_side_panel_state(
+    app: AppHandle,
+    state: State<'_, Mutex<SettingsStore>>,
+) -> Result<bool, String> {
     let mut store = state.lock().map_err(|_| "Impostazioni non disponibili")?;
     store.load(&app)?;
     Ok(store.0.side_panel_collapsed)
 }
 
 #[tauri::command]
-pub fn set_side_panel_state(app: AppHandle, state: State<'_, Mutex<SettingsStore>>, collapsed: bool) -> Result<bool, String> {
+pub fn set_side_panel_state(
+    app: AppHandle,
+    state: State<'_, Mutex<SettingsStore>>,
+    collapsed: bool,
+) -> Result<bool, String> {
     let mut store = state.lock().map_err(|_| "Impostazioni non disponibili")?;
     store.load(&app)?;
     store.0.side_panel_collapsed = collapsed;
     store.save(&app)?;
     Ok(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{decode_input, encode_image, encode_tiff_jpeg};
+    use image::{DynamicImage, Rgb, RgbImage};
+
+    #[test]
+    fn tiff_jpeg_round_trip_preserves_dimensions_and_pixels() {
+        let dir = std::env::temp_dir().join(format!("toolsy-tiff-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("round-trip.tiff");
+        let mut input = RgbImage::new(32, 24);
+        for (x, y, pixel) in input.enumerate_pixels_mut() {
+            *pixel = Rgb([(x * 7) as u8, (y * 9) as u8, ((x + y) * 4) as u8]);
+        }
+
+        encode_tiff_jpeg(&path, &DynamicImage::ImageRgb8(input.clone()), 80).unwrap();
+        let decoded = tiff_reader::TiffFile::open(&path)
+            .unwrap()
+            .read_decoded_image::<u8>(0)
+            .unwrap();
+        assert_eq!(decoded.shape(), &[24, 32, 3]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn every_supported_output_format_round_trips() {
+        let dir = std::env::temp_dir().join(format!("toolsy-format-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut input = RgbImage::new(64, 48);
+        for (x, y, pixel) in input.enumerate_pixels_mut() {
+            *pixel = Rgb([
+                ((x * 23 + y * 7) % 256) as u8,
+                ((y * 31) % 256) as u8,
+                ((x * y * 11) % 256) as u8,
+            ]);
+        }
+        let input = DynamicImage::ImageRgb8(input);
+
+        for format in ["jpeg", "png", "webp", "avif", "tiff"] {
+            let path = dir.join(format!("output.{format}"));
+            encode_image(&path, &input, format, 80).unwrap();
+            assert!(
+                std::fs::metadata(&path).unwrap().len() > 16,
+                "empty {format} output"
+            );
+            match format {
+                "tiff" => {
+                    let file = tiff_reader::TiffFile::open(&path).unwrap();
+                    let decoded = file.read_decoded_image::<u8>(0).unwrap();
+                    assert_eq!(decoded.shape(), &[48, 64, 3]);
+                }
+                "avif" => {
+                    let bytes = std::fs::read(&path).unwrap();
+                    assert_eq!(&bytes[4..8], b"ftyp");
+                    assert!(bytes[8..].windows(4).any(|brand| brand == b"avif"));
+                }
+                _ => assert_eq!(
+                    image::image_dimensions(&path).unwrap(),
+                    (64, 48),
+                    "wrong {format} dimensions"
+                ),
+            }
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn svg_input_rasterizes_and_enforces_pixel_limit() {
+        let dir = std::env::temp_dir().join(format!("toolsy-svg-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("fixture.svg");
+        std::fs::write(
+            &path,
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="3" height="2"><rect width="3" height="2" fill="#ff0000"/></svg>"##,
+        )
+        .unwrap();
+
+        let image = decode_input(&path).unwrap().to_rgba8();
+        assert_eq!(image.dimensions(), (3, 2));
+        assert_eq!(image.get_pixel(1, 1).0, [255, 0, 0, 255]);
+
+        std::fs::write(
+            &path,
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="10001" height="10000"/>"##,
+        )
+        .unwrap();
+        let error = decode_input(&path).unwrap_err();
+        assert!(error.contains("100 megapixel"));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 }

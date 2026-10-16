@@ -49,6 +49,10 @@ html, body, #root {
   height: 100%;
 }
 
+.macos .topbar {
+  padding-left: 80px;
+}
+
 .topbar button,
 .topbar input,
 .topbar select,

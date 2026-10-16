@@ -6,6 +6,10 @@
   "author": "K35P",
   "license": "MIT",
   "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=20.19"
+  },
   "debug": {
     "env": {
       "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777/"
@@ -18,10 +22,9 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "build:web:tauri": "tsc -p tsconfig.web.json && vite build",
+    "build:web:tauri": "tsc -p tsconfig.web.json && vite build --mode tauri",
     "preview": "vite preview",
-    "pretest": "vite build --mode=test",
-    "test": "vitest run"
+    "test": "cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

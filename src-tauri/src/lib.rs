@@ -1,8 +1,8 @@
 mod commands;
 mod settings;
 
-use std::sync::Mutex;
 use settings::SettingsStore;
+use std::sync::Mutex;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -16,6 +16,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(SettingsStore::default()))
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                #[cfg(target_os = "macos")]
+                if window.label() == "main" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             commands::get_platform,
             commands::ensure_conversions_dir,
@@ -32,6 +41,17 @@ pub fn run() {
             commands::get_side_panel_state,
             commands::set_side_panel_state,
         ])
-        .run(tauri::generate_context!())
-        .expect("errore durante l'avvio di Toolsy");
+        .build(tauri::generate_context!())
+        .expect("impossibile inizializzare Toolsy")
+        .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = event {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (app, event);
+        })
 }

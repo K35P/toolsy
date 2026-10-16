@@ -231,7 +231,10 @@ const Settings = () => {
               </p>
               <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 bg-blue-600/20 text-blue-300 rounded-full text-xs font-medium">
-                  Electron
+                  Tauri
+                </span>
+                <span className="px-3 py-1 bg-orange-600/20 text-orange-300 rounded-full text-xs font-medium">
+                  Rust
                 </span>
                 <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-medium">
                   React

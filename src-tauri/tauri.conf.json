@@ -4,12 +4,13 @@
   "version": "1.0.0",
   "identifier": "com.k35p.toolsy",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "pnpm dev",
     "devUrl": "http://127.0.0.1:1420",
-    "beforeBuildCommand": "npm run build:web:tauri",
+    "beforeBuildCommand": "pnpm build:web:tauri",
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "label": "main",
@@ -20,7 +21,11 @@
         "minHeight": 560,
         "decorations": false,
         "transparent": true,
-        "backgroundColor": "#00000000"
+        "backgroundColor": "#00000000",
+        "windowEffects": {
+          "effects": ["underWindowBackground"],
+          "state": "followsWindowActiveState"
+        }
       }
     ],
     "security": {
