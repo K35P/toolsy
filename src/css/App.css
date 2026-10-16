@@ -44,6 +44,11 @@ html, body, #root {
   user-select: none;
 }
 
+.topbar-drag-region {
+  flex: 1;
+  height: 100%;
+}
+
 .topbar button,
 .topbar input,
 .topbar select,

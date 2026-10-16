@@ -74,26 +74,21 @@ export const GlobalProvider = ({ children }) => {
   };
 
   const handleToggleSidePanel = async () => {
-    setIsSidePanelClosed(prev => {
-      const newValue = !prev;
-      document.documentElement.style.setProperty(
-        '--side-panel-width',
-        newValue ? '50px' : '200px'
-      );
-      
-      // Salva lo stato nel processo principale
-      try {
-        if (desktopApi.isAvailable) {
-          desktopApi.setSidePanelState(newValue);
-        }
-      } catch (error) {
-        console.error('Errore nel salvare lo stato della sidebar:', error);
-        // Fallback al localStorage
-        localStorage.setItem('toolsy-side-panel-collapsed', newValue.toString());
+    const newValue = !isSidePanelClosed;
+    setIsSidePanelClosed(newValue);
+    document.documentElement.style.setProperty(
+      '--side-panel-width',
+      newValue ? '50px' : '200px'
+    );
+
+    try {
+      if (desktopApi.isAvailable) {
+        await desktopApi.setSidePanelState(newValue);
       }
-      
-      return newValue;
-    });
+    } catch (error) {
+      console.error('Errore nel salvare lo stato della sidebar:', error);
+      localStorage.setItem('toolsy-side-panel-collapsed', newValue.toString());
+    }
   };
 
   const handleLanguageChange = async (newLanguage) => {

@@ -36,7 +36,7 @@ export const desktopApi = {
   },
   async selectImage(): Promise<string | null> {
     if (!tauriRuntime) return requireElectron().selectImage()
-    const selected = await open({ multiple: false, filters: [{ name: 'Immagini', extensions: ['jpg', 'jpeg', 'png', 'webp', 'avif', 'tiff'] }] })
+    const selected = await open({ multiple: false, filters: [{ name: 'Immagini', extensions: ['jpg', 'jpeg', 'png', 'webp', 'avif', 'tiff', 'svg'] }] })
     return typeof selected === 'string' ? selected : null
   },
   async selectOutputFolder() {

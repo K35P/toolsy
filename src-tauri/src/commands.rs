@@ -4,6 +4,36 @@ use serde::{Deserialize, Serialize};
 use std::{fs, io::BufWriter, path::{Path, PathBuf}, sync::Mutex, time::UNIX_EPOCH};
 use tauri::{AppHandle, Manager, State};
 
+const MAX_SVG_PIXELS: u64 = 100_000_000;
+
+fn decode_input(path: &Path) -> Result<DynamicImage, String> {
+    if path.extension().and_then(|extension| extension.to_str()).is_some_and(|extension| extension.eq_ignore_ascii_case("svg")) {
+        let data = fs::read(path).map_err(|e| format!("Impossibile leggere il file SVG: {e}"))?;
+        let mut options = resvg::usvg::Options::default();
+        options.fontdb_mut().load_system_fonts();
+        let tree = resvg::usvg::Tree::from_data(&data, &options)
+            .map_err(|e| format!("File SVG non valido o non supportato: {e}"))?;
+        let size = tree.size().to_int_size();
+        let pixel_count = u64::from(size.width()) * u64::from(size.height());
+        if size.width() == 0 || size.height() == 0 || pixel_count > MAX_SVG_PIXELS {
+            return Err("Le dimensioni dell'SVG superano il limite di sicurezza (100 megapixel)".into());
+        }
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(size.width(), size.height())
+            .ok_or("Impossibile allocare la memoria per rasterizzare l'SVG")?;
+        resvg::render(&tree, resvg::tiny_skia::Transform::default(), &mut pixmap.as_mut());
+        let image = image::RgbaImage::from_raw(size.width(), size.height(), pixmap.data().to_vec())
+            .ok_or("Impossibile leggere l'immagine rasterizzata")?;
+        return Ok(DynamicImage::ImageRgba8(image));
+    }
+
+    image::ImageReader::open(path)
+        .map_err(|e| format!("Impossibile aprire l'immagine: {e}"))?
+        .with_guessed_format()
+        .map_err(|e| e.to_string())?
+        .decode()
+        .map_err(|e| format!("Formato immagine non leggibile: {e}"))
+}
+
 fn effective_output_dir(app: &AppHandle, settings: &Mutex<SettingsStore>) -> Result<PathBuf, String> {
     let mut store = settings.lock().map_err(|_| "Impostazioni non disponibili")?;
     store.load(app)?;
@@ -118,8 +148,7 @@ pub async fn convert_image(app: AppHandle, settings: State<'_, Mutex<SettingsSto
             suffix += 1;
         }
         let result = (|| -> Result<(), String> {
-            let decoded = image::ImageReader::open(&input).map_err(|e| format!("Impossibile aprire l'immagine: {e}"))?
-                .with_guessed_format().map_err(|e| e.to_string())?.decode().map_err(|e| format!("Formato immagine non leggibile: {e}"))?;
+            let decoded = decode_input(&input)?;
             let q = quality.unwrap_or(if ext == "avif" { 50 } else { 80 }).clamp(1, 100);
             match ext.as_str() {
                 "jpg" | "jpeg" => {

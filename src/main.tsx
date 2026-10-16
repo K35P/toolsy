@@ -25,4 +25,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   </React.StrictMode>,
 )
 
-postMessage({ payload: 'removeLoading' }, '*')
+if (!desktopApi.isTauri) {
+  postMessage({ payload: 'removeLoading' }, '*')
+}
