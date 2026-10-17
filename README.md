@@ -4,7 +4,7 @@ Toolsy è un'app desktop per conversioni locali di immagini, basata su Tauri 2, 
 
 ## Sviluppo Tauri
 
-Prerequisiti: Node.js 20.19 o superiore, pnpm 11.25.0, Rust stable (almeno 1.90 per i plugin desktop correnti), toolchain nativa del sistema operativo e WebView2 su Windows. Su Linux servono le librerie WebKitGTK richieste da Tauri. La decodifica AVIF usa dav1d: macOS/Linux richiedono `pkg-config`, Python, Meson e Ninja per compilare dav1d staticamente; Windows richiede `pkg-config` e dav1d installato tramite vcpkg (`vcpkg install dav1d:x64-windows`).
+Prerequisiti: Node.js 20.19 o superiore, pnpm 11.25.0, Rust stable (almeno 1.90 per i plugin desktop correnti), toolchain nativa del sistema operativo e WebView2 su Windows. Su Linux servono le librerie WebKitGTK richieste da Tauri. La decodifica AVIF usa dav1d: macOS/Linux richiedono `pkg-config`, Python, Meson e Ninja per compilare dav1d staticamente; NASM serve sulle build Linux x86_64 e macOS Intel. Windows richiede `pkg-config` e dav1d installato tramite vcpkg (`vcpkg install dav1d:x64-windows`).
 
 ```sh
 pnpm install --frozen-lockfile

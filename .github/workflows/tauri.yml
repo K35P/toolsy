@@ -44,7 +44,12 @@ jobs:
             libssl-dev \
             libayatana-appindicator3-dev \
             librsvg2-dev \
+            nasm \
             patchelf
+
+      - name: Install macOS AVIF assembly tools
+        if: runner.os == 'macOS'
+        run: brew install nasm
 
       - name: Install dav1d build tools
         if: runner.os != 'Windows'
