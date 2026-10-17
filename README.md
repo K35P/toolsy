@@ -4,7 +4,7 @@ Toolsy è un'app desktop per conversioni locali di immagini, basata su Tauri 2, 
 
 ## Sviluppo Tauri
 
-Prerequisiti: Node.js 20.19 o superiore, pnpm 11.25.0, Rust stable (almeno 1.90 per i plugin desktop correnti), toolchain nativa del sistema operativo e WebView2 su Windows. Su Linux servono le librerie WebKitGTK richieste da Tauri.
+Prerequisiti: Node.js 20.19 o superiore, pnpm 11.25.0, Rust stable (almeno 1.90 per i plugin desktop correnti), toolchain nativa del sistema operativo e WebView2 su Windows. Su Linux servono le librerie WebKitGTK richieste da Tauri. La decodifica AVIF usa dav1d: macOS/Linux richiedono `pkg-config`, Python, Meson e Ninja per compilare dav1d staticamente; Windows richiede `pkg-config` e dav1d installato tramite vcpkg (`vcpkg install dav1d:x64-windows`).
 
 ```sh
 pnpm install --frozen-lockfile
@@ -23,4 +23,4 @@ Al primo avvio Tauri, se non esiste ancora `settings.json` nella directory dati 
 
 ## Stato della migrazione
 
-Il runtime desktop usa Tauri 2 con comandi Rust per conversioni, file e impostazioni, dialoghi nativi e adapter frontend. JPG, WebP, AVIF e TIFF supportano la qualità; PNG usa compressione senza perdita. L'input SVG viene rasterizzato localmente e per sicurezza gli SVG sopra 100 megapixel sono rifiutati. Il TIFF usa compressione JPEG per mantenere la qualità configurabile. L'aggiornamento automatico era codice non attivo nell'app originale: il componente non era montato e il feed era un URL dimostrativo. La build nativa macOS ARM e il round-trip dei formati sono verificati in locale; una GitHub Actions esegue test e packaging per macOS, Windows e Ubuntu. Gli smoke test interattivi Windows/Linux e macOS Intel restano da eseguire sui rispettivi sistemi.
+Il runtime desktop usa Tauri 2 con comandi Rust per conversioni, file e impostazioni, dialoghi nativi e adapter frontend. JPG, WebP, AVIF e TIFF supportano la qualità; PNG usa compressione senza perdita. L'input AVIF è decodificato con dav1d; l'input TIFF JPEG usa un decoder TIFF dedicato. L'input SVG viene rasterizzato localmente e per sicurezza gli SVG sopra 100 megapixel sono rifiutati. Il TIFF usa compressione JPEG per mantenere la qualità configurabile. L'aggiornamento automatico era codice non attivo nell'app originale: il componente non era montato e il feed era un URL dimostrativo. Il bundle macOS ARM è stato avviato e provato localmente; il bundle x86_64 è stato compilato e avviato via Rosetta, ma va ancora verificato su hardware Intel. Una GitHub Actions è configurata per test e packaging su macOS, Windows e Ubuntu. Gli smoke test Windows/Linux e la QA finale degli installer restano da eseguire sui rispettivi sistemi.

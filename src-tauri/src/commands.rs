@@ -49,12 +49,57 @@ fn decode_input(path: &Path) -> Result<DynamicImage, String> {
         return Ok(DynamicImage::ImageRgba8(image));
     }
 
-    image::ImageReader::open(path)
+    let decoded = image::ImageReader::open(path)
         .map_err(|e| format!("Impossibile aprire l'immagine: {e}"))?
         .with_guessed_format()
         .map_err(|e| e.to_string())?
-        .decode()
-        .map_err(|e| format!("Formato immagine non leggibile: {e}"))
+        .decode();
+
+    match decoded {
+        Ok(image) => Ok(image),
+        Err(image_error)
+            if path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| {
+                    matches!(extension.to_ascii_lowercase().as_str(), "tif" | "tiff")
+                }) =>
+        {
+            decode_tiff_jpeg(path).map_err(|tiff_error| {
+                format!("Formato immagine non leggibile: {image_error}; {tiff_error}")
+            })
+        }
+        Err(error) => Err(format!("Formato immagine non leggibile: {error}")),
+    }
+}
+
+fn decode_tiff_jpeg(path: &Path) -> Result<DynamicImage, String> {
+    let file = tiff_reader::TiffFile::open(path).map_err(|error| error.to_string())?;
+    let pixels = file
+        .read_decoded_image::<u8>(0)
+        .map_err(|error| error.to_string())?;
+    let shape = pixels.shape();
+    let (height, width) = match shape {
+        [height, width] => (*height as u32, *width as u32),
+        [height, width, channels] if matches!(channels, 3 | 4) => (*height as u32, *width as u32),
+        _ => return Err(format!("Layout TIFF JPEG non supportato: {shape:?}")),
+    };
+    let bytes = pixels
+        .as_slice()
+        .ok_or("Layout TIFF JPEG non contiguo")?
+        .to_vec();
+    match shape {
+        [_, _] => image::GrayImage::from_raw(width, height, bytes)
+            .map(DynamicImage::ImageLuma8)
+            .ok_or_else(|| "Dimensioni TIFF JPEG non valide".into()),
+        [_, _, 3] => image::RgbImage::from_raw(width, height, bytes)
+            .map(DynamicImage::ImageRgb8)
+            .ok_or_else(|| "Dimensioni TIFF JPEG non valide".into()),
+        [_, _, 4] => image::RgbaImage::from_raw(width, height, bytes)
+            .map(DynamicImage::ImageRgba8)
+            .ok_or_else(|| "Dimensioni TIFF JPEG non valide".into()),
+        _ => unreachable!(),
+    }
 }
 
 fn encode_tiff_jpeg(path: &Path, image: &DynamicImage, quality: u8) -> Result<(), String> {
@@ -433,7 +478,7 @@ pub fn set_side_panel_state(
 #[cfg(test)]
 mod tests {
     use super::{decode_input, encode_image, encode_tiff_jpeg};
-    use image::{DynamicImage, Rgb, RgbImage};
+    use image::{DynamicImage, GenericImageView, Rgb, RgbImage};
 
     #[test]
     fn tiff_jpeg_round_trip_preserves_dimensions_and_pixels() {
@@ -474,6 +519,13 @@ mod tests {
             assert!(
                 std::fs::metadata(&path).unwrap().len() > 16,
                 "empty {format} output"
+            );
+            let decoded_input = decode_input(&path)
+                .unwrap_or_else(|error| panic!("could not decode {format} input: {error}"));
+            assert_eq!(
+                decoded_input.dimensions(),
+                (64, 48),
+                "wrong {format} input size"
             );
             match format {
                 "tiff" => {
