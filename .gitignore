@@ -8,14 +8,18 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.pnpm-store/
 dist
 dist-ssr
-dist-electron
 release
 *.local
+/src-tauri/target/
+/src-tauri/gen/schemas/
+
+# Local working docs (not tracked) — notes, migration plans, scratchpads
+/docs/
 
 # Editor directories and files
-.vscode/.debug.env
 .idea
 .DS_Store
 *.suo
@@ -23,11 +27,3 @@ release
 *.njsproj
 *.sln
 *.sw?
-
-#lockfile
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
-/test-results/
-/playwright-report/
-/playwright/.cache/

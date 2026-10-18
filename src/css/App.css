@@ -37,11 +37,17 @@ html, body, #root {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   font-weight: 500;
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  
-  /* Properties for drag */
-  -webkit-app-region: drag;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.topbar-drag-region {
+  flex: 1;
+  height: 100%;
+}
+
+.macos .topbar {
+  padding-left: 80px;
 }
 
 .topbar button,
@@ -49,7 +55,6 @@ html, body, #root {
 .topbar select,
 .topbar a,
 .topbar .clickable {
-  -webkit-app-region: no-drag;
   cursor: pointer;
 }
 

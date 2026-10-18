@@ -7,6 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import ConvertedFileItem from '../../components/ConvertedFileItem';
 import { ConvertedFile, sortFiles } from '../../utils/fileManager';
+import { desktopApi } from '../../api/desktop';
 
 const MyFiles: React.FC = () => {
   const [files, setFiles] = useState<ConvertedFile[]>([]);
@@ -20,7 +21,7 @@ const MyFiles: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const convertedFiles = await window.electronAPI.getConvertedFiles();
+      const convertedFiles = await desktopApi.getConvertedFiles();
       setFiles(convertedFiles);
     } catch (err) {
       setError('Errore nel caricare i file convertiti');
@@ -36,7 +37,7 @@ const MyFiles: React.FC = () => {
 
   const handleOpenFile = async (filePath: string) => {
     try {
-      await window.electronAPI.openConvertedFile(filePath);
+      await desktopApi.openConvertedFile(filePath);
     } catch (err) {
       console.error('Errore nell\'aprire il file:', err);
     }
@@ -45,7 +46,7 @@ const MyFiles: React.FC = () => {
   const handleDeleteFile = async (filePath: string) => {
     if (window.confirm('Sei sicuro di voler eliminare questo file?')) {
       try {
-        const success = await window.electronAPI.deleteConvertedFile(filePath);
+        const success = await desktopApi.deleteConvertedFile(filePath);
         if (success) {
           // Ricarica la lista dei file
           await loadFiles();
@@ -64,7 +65,7 @@ const MyFiles: React.FC = () => {
 
   const openConversionsFolder = async () => {
     try {
-      await window.electronAPI.openConversionsFolder();
+      await desktopApi.openConversionsFolder();
     } catch (err) {
       console.error('Errore nell\'aprire la cartella:', err);
     }

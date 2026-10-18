@@ -1,0 +1,3 @@
+# Allow lifecycle scripts required by the Vite toolchain (pnpm 11+).
+allowBuilds:
+  esbuild: true

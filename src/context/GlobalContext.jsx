@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { desktopApi } from '../api/desktop';
 
 const GlobalContext = createContext(); // Provider
 
@@ -13,8 +14,8 @@ export const GlobalProvider = ({ children }) => {
     const loadSettings = async () => {
       try {
         // Prima prova a caricare dal processo principale
-        if (window.electronAPI) {
-          const settings = await window.electronAPI.getSettings();
+        if (desktopApi.isAvailable) {
+          const settings = await desktopApi.getSettings();
           if (settings) {
             setLanguage(settings.language || 'it');
             setOutputPath(settings.outputPath || '');
@@ -73,26 +74,21 @@ export const GlobalProvider = ({ children }) => {
   };
 
   const handleToggleSidePanel = async () => {
-    setIsSidePanelClosed(prev => {
-      const newValue = !prev;
-      document.documentElement.style.setProperty(
-        '--side-panel-width',
-        newValue ? '50px' : '200px'
-      );
-      
-      // Salva lo stato nel processo principale
-      try {
-        if (window.electronAPI) {
-          window.electronAPI.setSidePanelState(newValue);
-        }
-      } catch (error) {
-        console.error('Errore nel salvare lo stato della sidebar:', error);
-        // Fallback al localStorage
-        localStorage.setItem('toolsy-side-panel-collapsed', newValue.toString());
+    const newValue = !isSidePanelClosed;
+    setIsSidePanelClosed(newValue);
+    document.documentElement.style.setProperty(
+      '--side-panel-width',
+      newValue ? '50px' : '200px'
+    );
+
+    try {
+      if (desktopApi.isAvailable) {
+        await desktopApi.setSidePanelState(newValue);
       }
-      
-      return newValue;
-    });
+    } catch (error) {
+      console.error('Errore nel salvare lo stato della sidebar:', error);
+      localStorage.setItem('toolsy-side-panel-collapsed', newValue.toString());
+    }
   };
 
   const handleLanguageChange = async (newLanguage) => {
@@ -101,8 +97,8 @@ export const GlobalProvider = ({ children }) => {
     
     // Sincronizza con il processo principale
     try {
-      if (window.electronAPI) {
-        await window.electronAPI.updateSettings({ language: newLanguage });
+      if (desktopApi.isAvailable) {
+        await desktopApi.updateSettings({ language: newLanguage });
       }
     } catch (error) {
       console.error('Errore nell\'aggiornare la lingua nel processo principale:', error);
@@ -115,8 +111,8 @@ export const GlobalProvider = ({ children }) => {
     
     // Sincronizza con il processo principale
     try {
-      if (window.electronAPI) {
-        await window.electronAPI.setCustomOutputPath(newPath);
+      if (desktopApi.isAvailable) {
+        await desktopApi.setCustomOutputPath(newPath);
       }
     } catch (error) {
       console.error('Errore nell\'aggiornare il percorso nel processo principale:', error);

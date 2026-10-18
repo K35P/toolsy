@@ -1,5 +1,6 @@
 import { CheckIcon } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
+import { desktopApi } from "../../api/desktop";
 
 const ImageConverter: React.FC = () => {
   const [filePath, setFilePath] = useState<string | null>(null);
@@ -7,16 +8,20 @@ const ImageConverter: React.FC = () => {
   const [targetFormat, setTargetFormat] = useState<string>("png");
   const [quality, setQuality] = useState<number>(80);
   const [result, setResult] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [isConverting, setIsConverting] = useState(false);
 
   const outputFormats = ["png", "jpeg", "webp", "avif", "tiff"];
   const supportsQuality = ["jpeg", "webp", "avif", "tiff"];
 
   // Select file through dialog
   const handleSelectFile = async () => {
-    const path = await window.electronAPI.selectImage();
+    const path = await desktopApi.selectImage();
     if (!path) return;
     setFilePath(path);
-    const ext = path.split(".").pop();
+    setError("");
+    setResult("");
+    const ext = path.split(".").pop()?.toLowerCase();
     setSourceFormat(ext ?? "");
   };
 
@@ -24,18 +29,25 @@ const ImageConverter: React.FC = () => {
   const handleConvert = async () => {
     if (!filePath) return;
 
-    await window.electronAPI.ensureConversionsDir();
-
-    const output = await window.electronAPI.convertImage(
-      filePath,
-      targetFormat,
-      quality
-    );
-    setResult(output);
+    setIsConverting(true);
+    setError("");
+    try {
+      await desktopApi.ensureConversionsDir();
+      const output = await desktopApi.convertImage(filePath, targetFormat, quality);
+      setResult(output);
+    } catch (conversionError) {
+      setError(typeof conversionError === "string"
+        ? conversionError
+        : conversionError instanceof Error
+          ? conversionError.message
+          : "Conversione non riuscita. Riprova.");
+    } finally {
+      setIsConverting(false);
+    }
   };
 
-  const handleClickOpenConversionsPath = () => {
-    window.electronAPI.openPath(result);
+  const handleClickOpenConversionsPath = async () => {
+    await desktopApi.openPath(result);
   }
 
   return (
@@ -100,12 +112,15 @@ const ImageConverter: React.FC = () => {
         <div className="mt-6">
           <button
             onClick={handleConvert}
+            disabled={isConverting}
             className="px-6 py-2 bg-gray-800 text-white rounded-lg shadow hover:bg-gray-700 transition-colors"
           >
-            Converti
+            {isConverting ? "Conversione in corso…" : "Converti"}
           </button>
         </div>
       )}
+
+      {error && <p role="alert" className="mt-4 text-red-300">{error}</p>}
 
       {/* Result */}
       {result && (
