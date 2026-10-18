@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/), and t
 
 ### Added
 
+- Continuous GitHub Release (`continuous` pre-release) published automatically on every successful push to `main`.
 - Tauri 2 desktop runtime with Rust commands for local conversions, file management, and settings.
 - Native image pipeline for JPEG, PNG, WebP, AVIF, and TIFF output; SVG input rasterization with a 100 megapixel safety limit.
 - AVIF input decoding via dav1d; dedicated handling for JPEG-compressed TIFF produced by the app.

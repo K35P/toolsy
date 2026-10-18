@@ -125,3 +125,65 @@ jobs:
           name: toolsy-${{ matrix.os }}
           path: src-tauri/target/release/bundle/**
           if-no-files-found: error
+
+  # On every push to main, refresh a single public pre-release so users can
+  # download installers from https://github.com/K35P/toolsy/releases
+  publish-continuous-release:
+    name: Publish continuous release
+    needs: desktop
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: toolsy-*
+          path: artifacts
+
+      - name: Collect release assets
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          while IFS= read -r -d '' file; do
+            case "$file" in
+              *.dmg|*.zip|*.msi|*.exe|*.deb|*.AppImage|*.rpm|*.dll) ;;
+              *) continue ;;
+            esac
+            relative="${file#artifacts/}"
+            platform="${relative%%/*}"
+            base="$(basename "$file")"
+            dest="release-assets/${platform}-${base}"
+            cp "$file" "$dest"
+            echo "Prepared $dest"
+          done < <(find artifacts -type f -print0)
+          echo "---- release-assets ----"
+          ls -lah release-assets
+          test "$(find release-assets -type f | wc -l)" -gt 0
+
+      - name: Publish / update continuous pre-release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: continuous
+          commit: ${{ github.sha }}
+          name: Continuous build
+          prerelease: true
+          allowUpdates: true
+          replacesArtifacts: true
+          omitBodyDuringUpdate: false
+          omitNameDuringUpdate: false
+          artifactErrorsFailBuild: true
+          artifacts: release-assets/*
+          body: |
+            Automatic build from `main`.
+
+            | | |
+            |---|---|
+            | Commit | `${{ github.sha }}` |
+            | Workflow | [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+
+            This pre-release is **replaced on every push to `main`**. Prefer versioned tags (e.g. `v1.0.0`) for stable downloads once you start cutting formal releases.
+
+            Builds are not code-signed yet; macOS Gatekeeper / Windows SmartScreen may warn on first open.
+          token: ${{ secrets.GITHUB_TOKEN }}

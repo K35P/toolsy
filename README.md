@@ -9,6 +9,23 @@ Toolsy runs on your machine. Files never leave your computer for conversion — 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri&logoColor=white)](https://tauri.app/)
 [![pnpm](https://img.shields.io/badge/pnpm-11.25-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Continuous build](https://img.shields.io/github/v/release/K35P/toolsy?include_prereleases&label=download)](https://github.com/K35P/toolsy/releases/tag/continuous)
+
+---
+
+## Download
+
+Prebuilt installers are published automatically on every push to `main` as a **pre-release**:
+
+**[Download continuous build](https://github.com/K35P/toolsy/releases/tag/continuous)**
+
+| Platform | Typical assets |
+|----------|----------------|
+| macOS | `.dmg` / `.app` archive |
+| Windows | `.msi` / `.exe` (+ `dav1d.dll` when required) |
+| Linux | `.deb` / `.AppImage` |
+
+The `continuous` release is overwritten on each successful `main` build. Apps are not code-signed yet, so the OS may show a first-launch warning.
 
 ---
 
