@@ -51,27 +51,24 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install nasm
 
+      - name: Install Windows pkg-config and NASM
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install pkgconfiglite nasm -y --no-progress
+
       - name: Install dav1d build tools
-        if: runner.os != 'Windows'
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: Install dav1d build tools
-        if: runner.os != 'Windows'
+      - name: Install Meson and Ninja
         run: python -m pip install meson ninja
 
+      # Build dav1d from source and link statically so test binaries and
+      # packaged apps do not depend on a runtime dav1d.dll / shared lib.
       - name: Configure internal dav1d build
-        if: runner.os != 'Windows'
-        run: echo SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always >> "$GITHUB_ENV"
-
-      - name: Install Windows AVIF decoder dependency
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          choco install pkgconfiglite -y --no-progress
-          vcpkg install dav1d:x64-windows
-          "PKG_CONFIG_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib\pkgconfig" >> $env:GITHUB_ENV
+        shell: bash
+        run: echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
