@@ -1,2 +1,1 @@
-allowBuilds:
-  electron: true
+# Single-package workspace (kept for pnpm compatibility).

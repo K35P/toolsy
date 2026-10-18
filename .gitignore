@@ -11,17 +11,15 @@ node_modules
 .pnpm-store/
 dist
 dist-ssr
-dist-electron
 release
 *.local
 /src-tauri/target/
 /src-tauri/gen/schemas/
 
-# Local working docs (not tracked)
-MIGRATION_TAURI.md
+# Local working docs (not tracked) — notes, migration plans, scratchpads
+/docs/
 
 # Editor directories and files
-.vscode/.debug.env
 .idea
 .DS_Store
 *.suo
@@ -29,7 +27,3 @@ MIGRATION_TAURI.md
 *.njsproj
 *.sln
 *.sw?
-
-/test-results/
-/playwright-report/
-/playwright/.cache/

@@ -1,13 +1,29 @@
 # Changelog
 
-Le modifiche rilevanti di Toolsy sono raccolte qui.
+All notable changes to Toolsy are documented in this file.
 
-## Unreleased — Migrazione Tauri
+The format is inspired by [Keep a Changelog](https://keepachangelog.com/), and this project aims to follow [Semantic Versioning](https://semver.org/) once public releases stabilize.
 
-- Portato il runtime desktop a Tauri 2 e Rust, mantenendo temporaneamente Electron come fallback durante la QA multipiattaforma.
-- Spostate in Rust le conversioni locali JPEG, PNG, WebP, AVIF e TIFF; aggiunta la rasterizzazione SVG con limite di sicurezza a 100 megapixel.
-- Ripristinata la decodifica AVIF in ingresso con dav1d e la lettura dei TIFF JPEG generati dall'app.
-- Aggiunti dialoghi nativi, gestione dei file convertiti, controlli finestra e persistenza delle impostazioni in Tauri.
-- Al primo avvio Tauri viene tentata l'importazione delle impostazioni Electron; il file originale viene conservato.
-- L'auto-updater resta escluso: nella versione precedente non era attivo e il feed era dimostrativo.
-- La migrazione non è ancora pronta per il rilascio: la QA Windows/Linux, gli installer e la firma/notarizzazione sono ancora da completare.
+## [Unreleased]
+
+### Added
+
+- Tauri 2 desktop runtime with Rust commands for local conversions, file management, and settings.
+- Native image pipeline for JPEG, PNG, WebP, AVIF, and TIFF output; SVG input rasterization with a 100 megapixel safety limit.
+- AVIF input decoding via dav1d; dedicated handling for JPEG-compressed TIFF produced by the app.
+- Native file and folder dialogs, converted-file listing, window controls, and settings persistence under `com.k35p.toolsy`.
+- Optional one-shot import of legacy Electron-era settings on first launch (legacy file is kept).
+- CI workflow matrix for macOS, Windows, and Ubuntu (packaging / tests).
+
+### Changed
+
+- Desktop API adapter is Tauri-only (`src/api/desktop.ts`).
+
+### Removed
+
+- Electron main/preload process, `electron-builder`, `sharp`-based conversion path, and related Vite plugins.
+- Dead updater UI (`electron-updater`), demo scripts, and Electron Playwright e2e template.
+
+### Known gaps
+
+- Windows / Linux / Intel Mac smoke QA, distributable installers, and code signing / notarization are still outstanding.

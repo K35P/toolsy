@@ -265,6 +265,10 @@ pub fn list_converted_files(
     Ok(items.into_iter().map(|(_, item)| item).collect())
 }
 
+fn path_is_within(root: &Path, target: &Path) -> bool {
+    target == root || target.starts_with(root)
+}
+
 fn ensure_managed_path(
     app: &AppHandle,
     settings: &Mutex<SettingsStore>,
@@ -276,7 +280,7 @@ fn ensure_managed_path(
     let target = PathBuf::from(candidate)
         .canonicalize()
         .map_err(|e| e.to_string())?;
-    if target == root || target.starts_with(&root) {
+    if path_is_within(&root, &target) {
         Ok(target)
     } else {
         Err("Il file è fuori dalla cartella delle conversioni".into())
@@ -477,8 +481,24 @@ pub fn set_side_panel_state(
 
 #[cfg(test)]
 mod tests {
-    use super::{decode_input, encode_image, encode_tiff_jpeg};
+    use super::{decode_input, encode_image, encode_tiff_jpeg, path_is_within};
     use image::{DynamicImage, GenericImageView, Rgb, RgbImage};
+    use std::path::PathBuf;
+
+    #[test]
+    fn managed_path_rejects_paths_outside_root() {
+        let root = PathBuf::from("/tmp/toolsy-conversions");
+        let inside = PathBuf::from("/tmp/toolsy-conversions/photo.png");
+        let outside = PathBuf::from("/tmp/other/photo.png");
+        // Component-aware check (not raw string prefix): sibling folder must fail.
+        let sibling = PathBuf::from("/tmp/toolsy-conversions-evil/photo.png");
+        assert!(path_is_within(&root, &inside));
+        assert!(path_is_within(&root, &root));
+        assert!(!path_is_within(&root, &outside));
+        assert!(!path_is_within(&root, &sibling));
+        // `..` segments are neutralized by canonicalize() in ensure_managed_path
+        // before this helper runs.
+    }
 
     #[test]
     fn tiff_jpeg_round_trip_preserves_dimensions_and_pixels() {

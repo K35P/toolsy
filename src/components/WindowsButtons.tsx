@@ -6,7 +6,7 @@ export default function WindowsButtons() {
   if (!hasCustomWindowControls) return null
 
   return (
-    <div className="absolute top-0 right-0 h-8 flex items-center z-[9999] no-drag">
+    <div className="absolute top-0 right-0 h-8 flex items-center z-[9999]">
       {/* Minimize */}
       <button
         onClick={() => desktopApi.minimize()}

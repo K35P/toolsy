@@ -1,26 +1,153 @@
 # Toolsy
 
-Toolsy è un'app desktop per conversioni locali di immagini, basata su Tauri 2, Rust e React. Durante la migrazione Electron resta disponibile come fallback fino al completamento della QA nativa macOS, Windows e Linux.
+**Local-first desktop app for fast, private image conversions.**
 
-## Sviluppo Tauri
+Toolsy runs on your machine. Files never leave your computer for conversion — no cloud upload, no account required. Convert between common image formats, keep outputs organized, and tune quality when the format supports it.
 
-Prerequisiti: Node.js 20.19 o superiore, pnpm 11.25.0, Rust stable (almeno 1.90 per i plugin desktop correnti), toolchain nativa del sistema operativo e WebView2 su Windows. Su Linux servono le librerie WebKitGTK richieste da Tauri. La decodifica AVIF usa dav1d: macOS/Linux richiedono `pkg-config`, Python, Meson e Ninja per compilare dav1d staticamente; NASM serve sulle build Linux x86_64 e macOS Intel. Windows richiede `pkg-config` e dav1d installato tramite vcpkg (`vcpkg install dav1d:x64-windows`).
+> **Status:** active development. The desktop shell is **Tauri 2** (Rust + system WebView). Packaging, multi-platform QA, and signing are still evolving — expect changes between releases.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri&logoColor=white)](https://tauri.app/)
+[![pnpm](https://img.shields.io/badge/pnpm-11.25-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+
+---
+
+## Why Toolsy?
+
+| Goal | What that means |
+|------|-----------------|
+| **Privacy** | Conversions happen locally. Nothing is sent to a remote API for processing. |
+| **Speed** | Native dialogs and a Rust image pipeline keep the UI responsive for everyday files. |
+| **Simplicity** | Pick a file, choose a format, convert. Browse results in **My Files**. |
+| **Ownership** | MIT-licensed. Self-hosted on your desktop — your settings, your output folder. |
+
+Longer term, Toolsy aims to grow into a small toolkit for local file & image utilities while staying lightweight and offline-first.
+
+---
+
+## Features
+
+- **Image conversion** to JPEG, PNG, WebP, AVIF, and TIFF
+- **Quality control** for JPEG, WebP, AVIF, and TIFF (PNG stays lossless)
+- **SVG input** rasterized locally (rejected above a 100 megapixel safety limit)
+- **Native file / folder dialogs**
+- **My Files** — list, open, and delete converted outputs
+- **Custom output directory** (default: `Desktop/Toolsy Conversions`)
+- **Settings persistence** (language, output path, side panel state)
+- **Frameless desktop window** with platform-appropriate chrome
+
+### Supported formats
+
+| Direction | Formats |
+|-----------|---------|
+| **Input** | JPEG, PNG, WebP, AVIF, TIFF, SVG (static) |
+| **Output** | JPEG, PNG, WebP, AVIF, TIFF |
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| Desktop shell | [Tauri 2](https://tauri.app/) |
+| Native backend | Rust (image encode/decode, FS, settings) |
+| UI | React 18, TypeScript, Vite, Tailwind CSS |
+| Package manager | pnpm |
+
+App identifier: `com.k35p.toolsy`
+
+---
+
+## Project status
+
+Toolsy is **evolving**. Core product flows (convert, files, settings, window controls) run on Tauri. Still in progress:
+
+- Full smoke QA on Windows, Linux, and Intel Mac hardware
+- Distributable installers, code signing, and notarization
+- Broader file-tool features beyond images
+
+See [CHANGELOG.md](CHANGELOG.md) for recent changes. Auto-update is **not** included in the current roadmap.
+
+---
+
+## Prerequisites
+
+- **Node.js** ≥ 20.19  
+- **pnpm** 11.25.0 (see `packageManager` in `package.json`)  
+- **Rust** stable (1.90+ recommended for current Tauri desktop plugins)  
+- Platform toolchains:
+  - **macOS:** Xcode Command Line Tools  
+  - **Windows:** [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) + MSVC build tools  
+  - **Linux:** WebKitGTK and other [Tauri Linux dependencies](https://v2.tauri.app/start/prerequisites/)
+
+### AVIF / dav1d
+
+AVIF decoding uses **dav1d**:
+
+- **macOS / Linux:** `pkg-config`, Python, Meson, and Ninja (dav1d is built statically). NASM is needed for x86_64 Linux and Intel Mac builds.  
+- **Windows:** `pkg-config` and dav1d via vcpkg, e.g. `vcpkg install dav1d:x64-windows`
+
+---
+
+## Getting started
 
 ```sh
+git clone https://github.com/K35P/toolsy.git
+cd toolsy
 pnpm install --frozen-lockfile
 pnpm tauri:dev
 ```
 
-Build nativa per il sistema corrente:
+Useful scripts:
 
-```sh
-pnpm tauri:build
-```
+| Command | Description |
+|---------|-------------|
+| `pnpm tauri:dev` | Dev app with hot reload (Tauri + Vite) |
+| `pnpm tauri:build` | Production native bundle for the current OS |
+| `pnpm build` | Frontend build + Tauri production bundle |
+| `pnpm build:web` | Frontend-only production build |
+| `pnpm test` | Rust unit tests (`cargo test` in `src-tauri`) |
 
-L'output di build è in `src-tauri/target/release/bundle`. Prima della distribuzione pubblica servono firma e notarizzazione per i sistemi scelti. L'auto-updater non viene incluso: nel progetto precedente non era attivo e il suo feed era dimostrativo. Non distribuire una build prima degli smoke test manuali su ogni sistema supportato.
+Build artifacts land under `src-tauri/target/release/bundle`.
 
-Al primo avvio Tauri, se non esiste ancora `settings.json` nella directory dati Tauri, Toolsy prova a importare le impostazioni Electron da `Toolsy/settings.json` nella directory di configurazione utente. Il file originale non viene cancellato.
+> Do not ship public binaries until you have smoke-tested the target OS and completed signing / notarization where required.
 
-## Stato della migrazione
+---
 
-Il runtime desktop usa Tauri 2 con comandi Rust per conversioni, file e impostazioni, dialoghi nativi e adapter frontend. JPG, WebP, AVIF e TIFF supportano la qualità; PNG usa compressione senza perdita. L'input AVIF è decodificato con dav1d; l'input TIFF JPEG usa un decoder TIFF dedicato. L'input SVG viene rasterizzato localmente e per sicurezza gli SVG sopra 100 megapixel sono rifiutati. Il TIFF usa compressione JPEG per mantenere la qualità configurabile. L'aggiornamento automatico era codice non attivo nell'app originale: il componente non era montato e il feed era un URL dimostrativo. Il bundle macOS ARM è stato avviato e provato localmente; il bundle x86_64 è stato compilato e avviato via Rosetta, ma va ancora verificato su hardware Intel. Una GitHub Actions è configurata per test e packaging su macOS, Windows e Ubuntu. Gli smoke test Windows/Linux e la QA finale degli installer restano da eseguire sui rispettivi sistemi.
+## Settings location
+
+| OS | Path |
+|----|------|
+| macOS | `~/Library/Application Support/com.k35p.toolsy/settings.json` |
+| Windows | `%APPDATA%\com.k35p.toolsy\settings.json` |
+| Linux | `~/.local/share/com.k35p.toolsy/settings.json` |
+
+On first launch, if settings are missing, Toolsy may import a one-shot copy from a legacy Electron-era path (`Toolsy/settings.json` under the user config directory). The legacy file is not deleted.
+
+---
+
+## Contributing
+
+Contributions are welcome. Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for bug reports, PR workflow, and coding conventions.
+
+---
+
+## Security & privacy
+
+- Conversions and file listing run **locally** through Tauri commands with path checks scoped to the conversions folder.  
+- External links from the UI are restricted (e.g. project GitHub URL only).  
+- Please report security-sensitive issues privately to the maintainer when possible, instead of opening a public issue with exploit details.
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+---
+
+## Links
+
+- Repository: [github.com/K35P/toolsy](https://github.com/K35P/toolsy)  
+- Changelog: [CHANGELOG.md](CHANGELOG.md)  
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)

@@ -45,7 +45,7 @@ impl SettingsStore {
                     let legacy_path = config_dir.join("Toolsy").join("settings.json");
                     if let Ok(json) = fs::read_to_string(legacy_path) {
                         self.0 = serde_json::from_str(&json)
-                            .map_err(|e| format!("Impostazioni Electron non valide: {e}"))?;
+                            .map_err(|e| format!("Invalid legacy settings: {e}"))?;
                         self.save(app)?;
                     }
                 }
