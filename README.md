@@ -1,5 +1,10 @@
 # Toolsy
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri&logoColor=white)](https://tauri.app/)
+[![pnpm](https://img.shields.io/badge/pnpm-11.25-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Continuous build](https://img.shields.io/github/v/release/K35P/toolsy?include_prereleases&label=download)](https://github.com/K35P/toolsy/releases/tag/continuous)
+
 **Local-first desktop app for fast, private image conversions.**
 
 Toolsy runs on your machine. Files never leave your computer for conversion — no cloud upload, no account required.
@@ -14,12 +19,18 @@ Toolsy runs on your machine. Files never leave your computer for conversion — 
 
 More assets: **[continuous release](https://github.com/K35P/toolsy/releases/tag/continuous)**
 
-> Not code-signed yet — macOS Gatekeeper / Windows SmartScreen may warn on first open.
+### macOS install
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri&logoColor=white)](https://tauri.app/)
-[![pnpm](https://img.shields.io/badge/pnpm-11.25-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![Continuous build](https://img.shields.io/github/v/release/K35P/toolsy?include_prereleases&label=download)](https://github.com/K35P/toolsy/releases/tag/continuous)
+Builds are **not Apple-signed / notarized** yet. After downloading the `.dmg`:
+
+1. Open the disk image and drag **Toolsy** onto **Applications**.
+2. Clear Gatekeeper quarantine (otherwise macOS may say the app is “damaged”):
+
+```bash
+xattr -cr /Applications/Toolsy.app
+```
+
+3. Open Toolsy from Applications (or right-click → **Open** the first time).
 
 > **Status:** active development. Desktop shell is **Tauri 2** (Rust + system WebView). Packaging, multi-platform QA, and signing are still evolving.
 

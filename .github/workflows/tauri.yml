@@ -100,7 +100,11 @@ jobs:
       - name: Build Tauri frontend
         run: pnpm build:web
 
+      # Without this, CI skips AppleScript DMG styling (icon positions + Applications drop target).
+      # See https://v2.tauri.app/distribute/dmg/ and tauri-apps/tauri#1731
       - name: Build desktop bundles
+        env:
+          TAURI_BUNDLER_DMG_IGNORE_CI: "true"
         run: pnpm tauri:build
 
       # Keep dav1d.dll next to the Windows executable for the uploaded artifact.
