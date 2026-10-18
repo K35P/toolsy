@@ -6,17 +6,15 @@ Toolsy runs on your machine. Files never leave your computer for conversion — 
 
 ## Download
 
-Pick your platform (latest automated build from `main`):
-
 | | Installer |
 |---|-----------|
 | **macOS** (Apple Silicon) | [`.dmg`](https://github.com/K35P/toolsy/releases/download/continuous/toolsy-macos-latest-Toolsy_1.0.0_aarch64.dmg) |
 | **Windows** | [Setup `.exe`](https://github.com/K35P/toolsy/releases/download/continuous/toolsy-windows-latest-Toolsy_1.0.0_x64-setup.exe) · [`.msi`](https://github.com/K35P/toolsy/releases/download/continuous/toolsy-windows-latest-Toolsy_1.0.0_x64_en-US.msi) · [`dav1d.dll`](https://github.com/K35P/toolsy/releases/download/continuous/toolsy-windows-latest-dav1d.dll) (keep next to the app if AVIF fails to load) |
 | **Linux** | [`.AppImage`](https://github.com/K35P/toolsy/releases/download/continuous/toolsy-ubuntu-24.04-Toolsy_1.0.0_amd64.AppImage) · [`.deb`](https://github.com/K35P/toolsy/releases/download/continuous/toolsy-ubuntu-24.04-Toolsy_1.0.0_amd64.deb) · [`.rpm`](https://github.com/K35P/toolsy/releases/download/continuous/toolsy-ubuntu-24.04-Toolsy-1.0.0-1.x86_64.rpm) |
 
-All assets and notes: **[continuous release](https://github.com/K35P/toolsy/releases/tag/continuous)** · updated on every successful push to `main`.
+More assets: **[continuous release](https://github.com/K35P/toolsy/releases/tag/continuous)**
 
-> Not code-signed yet — macOS Gatekeeper / Windows SmartScreen may warn on first open. Filenames include the app version; if a direct link 404s after a version bump, use the continuous release page above.
+> Not code-signed yet — macOS Gatekeeper / Windows SmartScreen may warn on first open.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB?logo=tauri&logoColor=white)](https://tauri.app/)
