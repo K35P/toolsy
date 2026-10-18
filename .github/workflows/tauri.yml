@@ -51,24 +51,37 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install nasm
 
-      - name: Install Windows pkg-config and NASM
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: choco install pkgconfiglite nasm -y --no-progress
-
       - name: Install dav1d build tools
+        if: runner.os != 'Windows'
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
       - name: Install Meson and Ninja
+        if: runner.os != 'Windows'
         run: python -m pip install meson ninja
 
-      # Build dav1d from source and link statically so test binaries and
-      # packaged apps do not depend on a runtime dav1d.dll / shared lib.
+      # Unix: build dav1d from source and link statically.
       - name: Configure internal dav1d build
-        shell: bash
+        if: runner.os != 'Windows'
         run: echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
+
+      # Windows: use MSVC-compatible dav1d from vcpkg and put its DLL on PATH
+      # so tests/binaries can load it (STATUS_DLL_NOT_FOUND without this).
+      # Do NOT use SYSTEM_DEPS_DAV1D_BUILD_INTERNAL here: dav1d-sys' internal
+      # Meson build produces MinGW objects that fail to link with link.exe.
+      - name: Install Windows AVIF decoder dependency
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install pkgconfiglite -y --no-progress
+          vcpkg install dav1d:x64-windows
+          $root = $env:VCPKG_INSTALLATION_ROOT
+          $pkgConfig = Join-Path $root "installed\x64-windows\lib\pkgconfig"
+          $bin = Join-Path $root "installed\x64-windows\bin"
+          "PKG_CONFIG_PATH=$pkgConfig" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "PATH=$bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Get-ChildItem $bin -Filter "dav1d*.dll" | ForEach-Object { Write-Host "Found $($_.FullName)" }
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -89,6 +102,22 @@ jobs:
 
       - name: Build desktop bundles
         run: pnpm tauri:build
+
+      # Keep dav1d.dll next to the Windows executable for the uploaded artifact.
+      - name: Bundle Windows dav1d runtime DLL
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dll = Join-Path $env:VCPKG_INSTALLATION_ROOT "installed\x64-windows\bin\dav1d.dll"
+          $targets = @(
+            "src-tauri\target\release",
+            "src-tauri\target\release\bundle\msi",
+            "src-tauri\target\release\bundle\nsis"
+          ) | Where-Object { Test-Path $_ }
+          foreach ($dir in $targets) {
+            Copy-Item -Force $dll (Join-Path $dir "dav1d.dll")
+            Write-Host "Copied dav1d.dll -> $dir"
+          }
 
       - name: Upload bundles
         uses: actions/upload-artifact@v4
