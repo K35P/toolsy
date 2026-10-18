@@ -21,16 +21,16 @@ More assets: **[continuous release](https://github.com/K35P/toolsy/releases/tag/
 
 ### macOS install
 
-Builds are **not Apple-signed / notarized** yet. After downloading the `.dmg`:
+Builds use **ad-hoc signing** (not Apple Developer ID / notarized). After downloading the `.dmg`:
 
 1. Open the disk image and drag **Toolsy** onto **Applications**.
-2. Clear Gatekeeper quarantine (otherwise macOS may say the app is “damaged”):
+2. First launch: right-click **Toolsy** → **Open** → confirm. Or allow it under **System Settings → Privacy & Security**.
+
+If macOS still blocks it:
 
 ```bash
 xattr -cr /Applications/Toolsy.app
 ```
-
-3. Open Toolsy from Applications (or right-click → **Open** the first time).
 
 > **Status:** active development. Desktop shell is **Tauri 2** (Rust + system WebView). Packaging, multi-platform QA, and signing are still evolving.
 

@@ -107,6 +107,15 @@ jobs:
           TAURI_BUNDLER_DMG_IGNORE_CI: "true"
         run: pnpm tauri:build
 
+      - name: Verify macOS ad-hoc signature
+        if: runner.os == 'macOS'
+        run: |
+          APP="src-tauri/target/release/bundle/macos/Toolsy.app"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -dv --verbose=2 "$APP" 2>&1 | tee /tmp/codesign-info.txt
+          grep -q 'Identifier=com.k35p.toolsy' /tmp/codesign-info.txt
+          grep -q 'Sealed Resources version=2' /tmp/codesign-info.txt
+
       # Keep dav1d.dll next to the Windows executable for the uploaded artifact.
       - name: Bundle Windows dav1d runtime DLL
         if: runner.os == 'Windows'
